@@ -1,0 +1,36 @@
+﻿@*@page "/checkout"
+
+@using Stripe;
+@using global::Stripe.Checkout
+
+@inject IJSRuntime jsRuntime;
+@inject Authentication Authentication
+
+@code
+{
+    private async Task CheckoutHandler(string priceId)
+    {
+        string CustomerID = await Authentication.GetCustomerIDFromDB();
+        string UserEmail = await Authentication.GetUserEmailFromDB();
+
+        string sessionId = await Authentication.CreateCheckoutSessionAsync(priceId, CustomerID);
+        await jsRuntime.InvokeVoidAsync("redirectToCheckout", sessionId);
+    }
+
+}
+
+
+<html>
+  <head>
+    <title>Checkout</title>
+  </head>
+  <body>        
+        <button class="btn btn-primary mx-3" @onclick="@(e => CheckoutHandler("price_1JaFsOA9Yey7WFTEuioJsB7J"))">Semi-Auto Sub</button>
+        <button class="btn btn-primary mx-3" @onclick="@(e => CheckoutHandler("price_1JaFtqA9Yey7WFTEgC7FHaek"))">Full Auto Sub</button>
+        <button class="btn btn-primary mx-3" @onclick="@(e => CheckoutHandler("price_1JaFv5A9Yey7WFTEqVt9UjrG"))">Belt Fed Sub</button>
+        <br><br>
+        <button class="btn btn-primary mx-3" @onclick="@(e => CheckoutHandler("price_1JaFv5A9Yey7WFTEqVt9UjrG"))">Belt Fed Sub</button>
+
+
+  </body>
+</html>*@

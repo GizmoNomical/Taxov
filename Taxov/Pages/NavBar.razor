@@ -1,0 +1,249 @@
+﻿@*@page "/NavBar"*@
+
+@using Taxov.Pages
+@using Taxov.Pages.Calculator
+@using Taxov.Pages.Charts
+
+@implements IDisposable;
+
+@inherits Data.Navigation;
+@inject IJSRuntime JSRuntime;
+@*@inject Authentication Authentication;*@
+@inject ServerStatusManager serverStatusManager;
+
+@code
+{
+	//public LoginDisplay loginDisplay;
+
+	//private async Task UpdateNavBar()
+	//{
+	//	//if(Authentication.authState.User.Identity.IsAuthenticated)
+	//	//{				
+	//	//	if(ServerStatusManager.ServerOnline)
+	//	//	{
+	//	//		await Authentication.GetUserProfileDataFromDB();
+	//	//		if(Authentication.CurrentUser == null)
+	//	//		{
+	//	//			Authentication.CreateUserProfileData();
+	//	//			Authentication.CurrentUser.AccessLevel = null;
+	//	//		}
+	//	//	}			
+	//	//		StateHasChanged();
+ // //      }				
+	//}
+
+	public async Task GoHome()
+	{		
+		//await UpdateNavBar();
+		await HomePage();
+	}	
+
+	//public async Task OpenProfile()
+	//{
+	//	if(!ServerStatusManager.ServerOnline)
+	//	{
+	//		StateHasChanged();
+	//	}
+
+	//	if(Authentication.authState.User.Identity.IsAuthenticated)
+ //       {            
+	//		await ProfilePage();
+ //       }
+	//}
+
+	//public async Task OpenMaxCalc()
+	//{		
+	//	if(!ServerStatusManager.ServerOnline)
+	//	{
+	//		StateHasChanged();
+	//	}
+	//	else
+	//	{
+	//		await Authentication.CheckAccessLevel();
+
+	//		if(Authentication.CurrentUser == null)
+	//		{
+	//			await HomePage();
+	//		}
+	//		else
+	//		{
+	//			if(Authentication.CurrentUser.AccessLevel == "" || Authentication.CurrentUser.AccessLevel == null)
+	//				{
+	//					await HomePage();							
+	//				}
+	//				if(Authentication.CurrentUser.AccessLevel == "Bolt Action")
+	//				{
+	//					await BoltActionPage();
+	//				}
+	//				//if(Authentication.CurrentUser.AccessLevel == "Semi-Auto")
+	//				//{
+	//				//	await SemiAutoPage();
+	//				//}
+	//				if(Authentication.CurrentUser.AccessLevel == "Full Auto")
+	//				{
+	//					await FullAutoPage();						
+	//				}
+	//				//if(Authentication.CurrentUser.AccessLevel == "Belt Fed")
+	//				//{
+	//				//	await BeltFedPage();
+	//				//}
+	//				if(Authentication.CurrentUser.AccessLevel == "Influencer")
+	//				{
+	//					await FullAutoPage();	
+	//				}
+	//				if(Authentication.CurrentUser.AccessLevel == "GameMaster")
+	//				{
+	//					await FullAutoPage();	
+	//				}
+	//		}
+	//	}		
+	//}
+
+
+	public async Task RefreshPage()
+	{
+		StateHasChanged();
+	}
+
+	public async void RefreshPageTimer(object sender, EventArgs e)
+    {
+		InvokeAsync(this.RefreshPage);		
+		JSRuntime.InvokeVoidAsync("RSSResetOpacity");		
+		JSRuntime.InvokeVoidAsync("RSSFadeout");
+
+        InvokeAsync(this.RefreshPage);		
+    }
+
+    void IDisposable.Dispose()
+    {
+        // stop listening
+        serverStatusManager.ServerPolled -= RefreshPageTimer;
+    }
+
+	protected override async Task OnInitializedAsync()
+	{	
+		serverStatusManager.ServerPolled += RefreshPageTimer;
+
+		if(!ServerStatusManager.ServerOnline)
+		{
+			return;
+		}
+	}
+
+//	protected override async void OnAfterRender(bool firstRender)
+//	{
+//		if(!ServerStatusManager.ServerOnline)
+//		{
+//			firstRender = true;
+//		}
+
+//		// execute conditionally for loading data, otherwise this will load
+//		// every time the page refreshes
+//		//if(firstRender)
+//		//{	
+//		//	if(ServerStatusManager.ServerOnline)
+//		//	{
+//		//		//if(Authentication.authState.User.Identity.IsAuthenticated)
+//		//		//{			
+//		//		//	Console.WriteLine("SetupUser from NAVBAR");
+//		//		//	await Authentication.SetupActiveUserRetryWhenFail();
+//		//		//	StateHasChanged(); 
+//		//		//}
+//		//		//else
+//		//		//{
+//		//		//	Console.WriteLine("User Not Authenticated - NAVBAR...");
+//		//		//	return;
+//		//		//}
+//		//	}			
+//		//}
+//	}
+}
+
+
+
+  <div class="navbar">
+		
+		<!-- drop menu -->
+		<div style="width: 64px; height: 48px; text-align: center; font-size: 32px;">
+		 <nav id="nav_wrap">
+			
+<ul>
+	<li>
+		<div class="burger">
+		<a href="#" style="font-size:26px; pointer-events: none">
+		   &#9776;
+		   </a>
+	   	   </div>
+    <ul> <!--Drop Down Menu-->
+      
+      <li class="dir"><a href="#" @onclick="@(async () => await HomePage())">TAX TOOL</a>
+      </li>
+      <li><a href="#" @onclick="@(async () => await ContactPage())">CONTACT</a></li>
+      <li><a href="#" @onclick="@(async () => await LegalPage())">LEGAL</a></li>
+    </ul>
+
+  </li>
+</ul>
+		</nav>
+		
+		</div>
+
+
+		
+		<!--RSS -->
+		<div style="width:686px; height: 48px;">
+			
+				@if(ServerStatusManager.ServerOnline)
+				{
+					<div style="vertical-align: middle" class="RSSBox">
+					
+						<div id="RSSElementA" style="color: rgba(180,177,171,1.00);">
+							
+							@((MarkupString)serverStatusManager.RSSElementA)
+							
+						</div>
+
+						<div id="RSSElementB">
+							@((MarkupString)serverStatusManager.RSSElementB)
+						</div>
+					
+					</div>
+				}
+				@if(!ServerStatusManager.ServerOnline)
+				{
+					<div style="vertical-align: middle; outline: solid -2px; outline-color: #ff4f00;" class="RSSBox">
+					
+								<div id="RSSElementA" style="color: rgba(180,177,171,1.00);">
+									@((MarkupString)serverStatusManager.RSSElementA)
+								</div>
+
+								<div id="RSSElementB">
+									@((MarkupString)serverStatusManager.RSSElementB)
+								</div>
+					</div>
+				}					
+		</div>
+
+	</div>
+
+		@*Server Offline Header*@
+		@if(!ServerStatusManager.ServerOnline)
+		{
+			<ServerOffline></ServerOffline>
+
+			if(_component != null)
+			{
+				<DynamicComponent Type=@_component></DynamicComponent>
+			}			
+		}
+
+		@if(ServerStatusManager.ServerOnline)
+		{
+			if(_component != null)
+			{
+				<DynamicComponent Type=@_component></DynamicComponent>
+			}			
+		}
+           
+   <Footer></Footer>
+

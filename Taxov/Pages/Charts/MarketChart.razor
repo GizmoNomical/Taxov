@@ -1,0 +1,110 @@
+﻿@*@page "/MarketChart"*@
+
+@inherits Data.TaxCalculator
+@inject IJSRuntime JSRuntime
+
+@code
+{
+    [CascadingParameter] double[] MarketGraphValue { get; set; }
+    [CascadingParameter] string[] MarketGraphLossGain { get; set;}
+
+    [CascadingParameter( Name="User" )]
+    private UserModel User { get; set; }
+
+    [CascadingParameter(Name = "ToolTipState")]
+    private int _ToolTips { get; set; } = 0;
+
+    public async Task ToggleTipsOn()
+    {
+        _ToolTips = 1;
+        StateHasChanged();
+    }
+
+    public async Task ToggleTipsOff()
+    {
+        if(User == null)
+		{
+            StateHasChanged();
+			return;
+		}
+
+        if(User.ToolTips == 1)
+        {
+            StateHasChanged();
+            return;
+        }
+        _ToolTips = 0;
+        StateHasChanged();
+    }
+
+}
+
+
+
+<CascadingValue Name="ToolTipState" Value=@_ToolTips>
+<table class="chart" width="1100" border="0" cellspacing="0" cellpadding="0">
+					
+  					<tbody>
+                          <tr style="text-align: center;">
+		<th scope="row">MARK UP/DOWN</th>
+	<td>-7.45%</td>
+	<td>-5%</td>
+	<td>-2.5%</td>
+	<td class="chartcolor3">MARKET PRICE</td>
+	<td>+5%</td>
+	<td>+10%</td>
+	<td>+15%</td>
+	</tr>
+    <tr align="right">
+      <th scope="row"><ToolTip Text=@ToolTipData.MarketChart_MarketPrice() isChart=true><div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>LIST PRICE</div></ToolTip></th>
+      <td class ="chartcolor2"><input class="data" type="number" placeholder="000000" disabled @bind="@MarketGraphValue[0]"></td>
+      <td class ="chartcolor"><input class="data" type="number" placeholder="000000"  disabled @bind="@MarketGraphValue[1]"></td>
+      <td class ="chartcolor2"><input class="data" type="number" placeholder="000000" disabled @bind="@MarketGraphValue[2]"></td>
+      <td class ="chartcolor3"><input class="data" type="number" placeholder="000000"  disabled @bind="@MarketGraphValue[3]"></td>
+      <td class ="chartcolor2"><input class="data" type="number" placeholder="000000" disabled @bind="@MarketGraphValue[4]"></td>
+      <td class ="chartcolor"><input class="data" type="number" placeholder="000000"  disabled @bind="@MarketGraphValue[5]"></td>
+      <td class ="chartcolor2"><input class="data" type="number" placeholder="000000" disabled @bind="@MarketGraphValue[6]"></td>
+    </tr>
+    <tr align="right">
+      <th scope="row"><ToolTip Text=@ToolTipData.MarketChart_ProfitOverBreakEven() isChart=true><div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>PROFIT/BREAK</div></ToolTip></th>
+      <td class ="chartcolor2a"><input class="data2" type="number" placeholder="000000" disabled @bind="@MarketGraphValue[7]"></td>
+      <td class ="chartcolora"><input class="data2" type="number" placeholder="000000"  disabled @bind="@MarketGraphValue[8]"></td>
+      <td class ="chartcolor2a"><input class="data2" type="number" placeholder="000000" disabled @bind="@MarketGraphValue[9]"></td>
+      <td class ="chartcolora3"><input class="data2" type="number" placeholder="000000"  disabled @bind="@MarketGraphValue[10]"></td>
+      <td class ="chartcolor2a"><input class="data2" type="number" placeholder="000000" disabled @bind="@MarketGraphValue[11]"></td>
+      <td class ="chartcolora"><input class="data2" type="number" placeholder="000000"  disabled @bind="@MarketGraphValue[12]"></td>
+      <td class ="chartcolor2a"><input class="data2" type="number" placeholder="000000" disabled @bind="@MarketGraphValue[13]"></td>
+    </tr>
+	<tr align="right">
+      <th scope="row"><ToolTip Text=@ToolTipData.MarketChart_ProfitOverBaseValue() isChart=true><div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>PROFIT/BASE</div></ToolTip></th>
+      <td class ="chartcolor2"><input class="data" type="number" placeholder="000000" disabled @bind="@MarketGraphValue[14]"></td>
+      <td class ="chartcolor"><input class="data" type="number" placeholder="000000"  disabled @bind="@MarketGraphValue[15]"></td>
+      <td class ="chartcolor2"><input class="data" type="number" placeholder="000000" disabled @bind="@MarketGraphValue[16]"></td>
+      <td class ="chartcolor3"><input class="data" type="number" placeholder="000000"  disabled @bind="@MarketGraphValue[17]"></td>
+      <td class ="chartcolor2"><input class="data" type="number" placeholder="000000" disabled @bind="@MarketGraphValue[18]"></td>
+      <td class ="chartcolor"><input class="data" type="number" placeholder="000000"  disabled @bind="@MarketGraphValue[19]"></td>
+      <td class ="chartcolor2"><input class="data" type="number" placeholder="000000" disabled @bind="@MarketGraphValue[20]"></td>
+    </tr>
+    <tr align="right">
+      <th scope="row"><ToolTip Text=@ToolTipData.MarketChart_Valuation() isChart=true><div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>VALUATION</div></ToolTip></th>
+      <td class ="chartcolor2a"><input class="data2" type="number" placeholder="000000" disabled @bind="@MarketGraphValue[21]"></td>
+      <td class ="chartcolora"><input class="data2" type="number" placeholder="000000"  disabled @bind="@MarketGraphValue[22]"></td>
+      <td class ="chartcolor2a"><input class="data2" type="number" placeholder="000000" disabled @bind="@MarketGraphValue[23]"></td>
+      <td class ="chartcolora3"><input class="data2" type="number" placeholder="000000"  disabled @bind="@MarketGraphValue[24]"></td>
+      <td class ="chartcolor2a"><input class="data2" type="number" placeholder="000000" disabled @bind="@MarketGraphValue[25]"></td>
+      <td class ="chartcolora"><input class="data2" type="number" placeholder="000000"  disabled @bind="@MarketGraphValue[26]"></td>
+      <td class ="chartcolor2a"><input class="data2" type="number" placeholder="000000" disabled @bind="@MarketGraphValue[27]"></td>
+    </tr>
+	<tr align="right">
+      <th scope="row"><ToolTip Text=@ToolTipData.MarketChart_GainOrLoss() isChart=true><div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>GAIN OR LOSS</div></ToolTip></th>
+      <td class ="chartcolor2"><input class="data" type="text" placeholder="?" disabled @bind="@MarketGraphLossGain[0]"></td>
+      <td class ="chartcolor"><input class="data"  type="text" placeholder="?" disabled @bind="@MarketGraphLossGain[1]"></td>
+      <td class ="chartcolor2"><input class="data" type="text" placeholder="?" disabled @bind="@MarketGraphLossGain[2]"></td>
+      <td class ="chartcolor3"><input class="data"  type="text" placeholder="?" disabled @bind="@MarketGraphLossGain[3]"></td>
+      <td class ="chartcolor2"><input class="data" type="text" placeholder="?" disabled @bind="@MarketGraphLossGain[4]"></td>
+      <td class ="chartcolor"><input class="data"  type="text" placeholder="?" disabled @bind="@MarketGraphLossGain[5]"></td>
+      <td class ="chartcolor2"><input class="data" type="text" placeholder="?" disabled @bind="@MarketGraphLossGain[6]"></td>
+    </tr>
+  </tbody>
+</table>
+</CascadingValue>

@@ -1,0 +1,252 @@
+﻿@page "/About"
+
+@using Taxov.Pages
+@using Taxov.Pages.Calculator
+@using Taxov.Pages.Charts
+@using Stripe;
+@using global::Stripe.Checkout
+
+@inject IJSRuntime jsRuntime;
+@*@inject Authentication Authentication;*@
+
+@code
+{
+ //   public string _AccessLevel;
+	//private int retryCount = 3;
+ //   private readonly TimeSpan retryDelay = TimeSpan.FromSeconds(1);
+
+
+    //private async Task CheckoutHandler(string priceId)
+    //{
+    //    if(ServerStatusManager.ServerOnline)
+    //    {            
+    //        await Authentication.UpdateDatabaseStatus();
+    //        if(Authentication.DatabaseOnline)
+    //        {            
+    //            if(Authentication.Auth0Client.EmailVerified == true)
+    //            {  
+    //                string CustomerID = await Authentication.GetCustomerIDFromDB();
+    //                string UserEmail = await Authentication.GetUserEmailFromDB();
+
+    //                string sessionId = await Authentication.CreateCheckoutSessionAsync(priceId, CustomerID);
+    //                await jsRuntime.InvokeVoidAsync("redirectToCheckout", sessionId);
+    //            }
+    //            if(Authentication.Auth0Client.EmailVerified == false || Authentication.Auth0Client.EmailVerified == null)
+    //            {
+    //                //Tell User they need to verify e-mail
+    //            }
+    //        }
+    //    }
+    //}
+
+    //public async Task<Boolean> UpdateCurrentUserRetryWhenFail()
+    //{
+    //    int currentRetry = 0;
+
+    //    for (; ; )
+    //    {
+    //        try
+    //        {				
+    //            if(!ServerStatusManager.ServerOnline)
+    //            {
+    //                currentRetry++;
+
+    //                if (currentRetry > this.retryCount)
+    //                {
+    //                    Console.WriteLine("UpdateCurrentUserRetryWhenFail - ABOUT- Failed Consecutively...");
+    //                    return false;
+    //                }
+    //                return false;
+    //            }   
+
+				//if(ServerStatusManager.ServerOnline)
+				//{
+				//	if(Authentication.Auth0Client != null && Authentication.Auth0Client.UserName != null)
+				//	{
+    //                    await Authentication.GetUserProfileDataFromDB();
+    //                    _AccessLevel = Authentication.CurrentUser.AccessLevel;
+    //                    return true;
+    //                }					
+				//}
+				
+    //            if (_AccessLevel != null)
+    //            {
+    //                return true;
+    //            }
+				//else
+				//{
+				//	Console.WriteLine("UpdateCurrentUserRetryWhenFail - ABOUT - Operation Failed");
+
+				//	currentRetry++;
+
+				//	if (currentRetry > retryCount)
+				//	{
+				//		Console.WriteLine("UpdateCurrentUserRetryWhenFail - ABOUT - Operation Failed Consecutively...");
+				//		return false;
+				//	}
+				//}
+    //        }
+    //        catch (Exception e)
+    //        {
+    //            Console.WriteLine("UpdateCurrentUserRetryWhenFail - ABOUT - Operation Failed");
+
+    //            currentRetry++;
+
+    //            if (currentRetry > retryCount)
+    //            {
+    //                Console.WriteLine("UpdateCurrentUserRetryWhenFail - ABOUT - Operation Failed Consecutively...");
+    //                return false;
+    //            }
+    //        }
+    //        await Task.Delay(retryDelay);
+    //    }
+    //    return false;
+    //}
+
+
+ //   protected override async void OnAfterRender(bool firstRender)
+	//{
+	//	// execute conditionally for loading data, otherwise this will load
+	//	// every time the page refreshes
+	//	if(firstRender)
+	//	{			
+	//		if(ServerStatusManager.ServerOnline)
+	//		{
+ //       //        if (Authentication.authState.User.Identity.IsAuthenticated)
+ //       //        {
+ //       //            await UpdateCurrentUserRetryWhenFail();
+	//			    //StateHasChanged();   
+ //       //        }
+	//		}			
+	//	}
+	//}
+}
+
+
+<!doctype html>
+<html>
+<body>
+    <div class="pages">
+        <div class="blurthing2">
+            <h1 class="pageh1">ABOUT</h1>
+
+                <figure>
+                    <img src="/img/polaroid.png" width="245" height="285" alt="" style="float: right;" title="The Accountant in his Youth..." />
+                    <figcaption style="color: #73674D;text-align: center; margin: 5px">
+                        <div class="textbox"><h3>"YOUNGMAN, STOP PAYING MORE IN TAXES THAN THE PRODUCT IS WORTH!"</h3> <span style="font-size: 14px; font-style: italic">-The Accountant</span></div>
+                    </figcaption>
+                </figure>
+
+                <div style="font-size: 16px; text-align:left; padding-left: 10px;padding-right: 10px;text-indent:28px;line-height:18px" >
+            
+                <p>Escape from Taxov - The Escape from Tarkov Tax Tool is a simple, yet powerful web application that provides metrics and data to demystify the complexities and intricacies of the Tarkov Flea Market.</p>
+               
+                <p>
+                Our mission and goal is to improve the overall community experience in using the Tarkov Flea Market, providing a fully encompassed Tax Calculator that helps PMCs avoid hefty taxes while still 
+                turning a profit.
+                </p>
+        	&#x25d8; No more wasting time guessing numbers, while paying high taxes for minimal reputation gain!<br>
+        	&#x25d8; Avoid embarrassing listings that cost you more than you receive back from the sale!
+    
+<br><br>
+
+        <table width="730px" cellspacing="0" cellpadding="10" style="outline:solid 1px #525759">
+    <caption class="pageh3" style="font-size:28px;">Features Include</caption>
+    <tbody>
+        <tr style="vertical-align: top;">
+            <td class="about2">   
+                <table class="sub-headers" width="340px" cellspacing="0" cellpadding="0" border="0">
+                    <tbody>
+                        
+                        <tr>
+                            <td style="color: #2e88bf">Bolt Action
+                            </td>
+                            <td style="text-align:right; font-weight:bolder;">
+                                FREE&ensp;&ensp;
+                            </td>
+
+                        </tr>
+                        <tr>
+                            <td style="font-weight: bolder;color: #9a8866">Basic Calculator
+                            </td>
+                            
+                            </tr>
+
+                    </tbody>
+                </table>
+                <ul style="font-size:16px">
+                    <li type="circle">Estimated Taxes (Standard Rates)</li>
+                    <li type="circle">Realized Gains</li>
+                    <li type="circle">Quick Currency Conversion Calculator</li>
+                  
+                </ul>​​
+                <div class="bottomlog" style="position: relative; top: 217px">
+                     
+                   
+                                            
+                </div>
+            </td>
+            <td class="about1">   
+
+                 <table class="sub-headers" width="340px" cellspacing="0" cellpadding="0" border="0">
+                    <tbody>
+                        <tr>
+                            <td style="font-weight: bolder;color: #2e88bf">Full Auto
+                            </td>
+                            <td style="text-align:right">
+                                TBD&ensp;&ensp;&ensp;
+                                @*$5&ensp;&ensp;&ensp;*@
+                            </td>
+
+                        </tr>
+                        <tr>
+                            <td style="color: #9a8866"> Advanced Calculator
+                            </td>
+
+                             <td style="text-align:right; font-size:14px;color: #9a8866">
+                                PER MONTH
+                            </td>
+                            </tr>
+
+                    </tbody>
+                </table>
+            
+                <ul style="font-size:16px">  
+                    <li type="circle">Includes Bolt Action Tier</li>
+                    <li type="circle">Calculate Flea Tax with Level 3 Intel Discount</li>
+                    <li type="circle">Taxes calculated on Bulk Sales</li>
+                    <li type="circle">Tax Per Item Tax Fee</li>
+                    <li type="circle">Flea Rep Gain Tool</li>                    
+                    <li type="circle">Complete Tax Breakdowns (Including Savings)</li>
+                    <li type="circle">Full Sale Analysis</li>
+                    <li type="circle">Market Viability Evaluation</li>
+                    <li type="circle">Per Item Analysis for Bulk Sales/Large Quantities</li>
+                    <li type="circle">Detailed Profit Margins</li>
+                    <li type="circle">Competitive Break Even Price Points</li>
+                    <li type="circle">Helpful Charts and Graphs</li>
+                    <li type="circle">Access to members only Discord Channels</li>
+                </ul>
+               <div class="bottomlog" style="position: relative;">
+                   
+                    &nbsp;
+
+                </div>
+            </td>
+        </tr>
+        
+    </tbody>
+</table>
+<br><br>
+<div style="text-align: center; text-indent:unset;">
+Easy to use, Quick and Efficient!<br><br>
+​
+​"Escape from Taxov - The Tarkov Tax Tool" provides accurate data at your fingertips to guide you through your after Scav Sales!<br><br>
+<br>
+</div>
+                <br>
+                <br>
+                </div>
+        </div>
+     </div>
+    </body>
+</html>

@@ -1,0 +1,29 @@
+﻿@inherits Data.Navigation;
+@using Taxov.Pages
+@using Taxov.Pages.Calculator
+@using Taxov.Pages.Charts
+
+
+@code
+{
+	[Parameter]
+			public EventCallback OnDevWidgetEvent {get; set;}
+
+			private void DevWidgetLoad()
+			{
+				OnDevWidgetEvent.InvokeAsync();
+			}
+}	
+
+<div class="devheader">Development Blog:</div>
+	<div class="version"> &nbsp; v 0 . 8 . 0 - 22092021</div>
+		<span style="font-style: italic; font-size: 14px">
+			<ul>
+				<li>Debugged all code</li>
+				<li>Made all functions Async if possible</li>
+				<li>Added Null checks</li>
+				<li>Added Exception Handling</li>
+				<li>Fixed long delay in LoginDisplay</li>
+				<li>Cleaned up reduntant code throughout</li>						
+			</ul>
+		</span>

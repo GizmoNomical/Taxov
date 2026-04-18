@@ -1,0 +1,453 @@
+﻿@inherits Data.Navigation
+@using Taxov.Pages
+@using Taxov.Pages.Calculator
+@using Taxov.Pages.Charts
+@using Auth0.ManagementApi
+@using System.Net
+@using Newtonsoft.Json.Linq
+@using RestSharp
+@using Newtonsoft
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+
+@using Microsoft.Extensions.Configuration
+
+@implements IDisposable
+
+@inject IDataAccess _data;
+@inject IConfiguration _config;
+@inject Authentication Authentication;
+@inject TokenManager tokenManager;
+@inject ServerStatusManager serverStatusManager;
+
+@code
+{
+    private string UserName { get; set; }
+
+    private int ClientID { get; set; }
+    private string AccessLevel { get; set; }
+
+    private string UserNameString = "Loading...";
+    private string ClientIDString = "Loading...";
+
+    private int retryCount = 20;
+    private int currentRetry = 0;
+    private readonly TimeSpan retryDelay = TimeSpan.FromSeconds(0.5);
+
+
+    [Parameter] public EventCallback OnOpenProfile { get; set;}  
+    
+    [Parameter] public EventCallback OnClickAccessCard { get; set; }
+
+
+
+    protected async Task ProfileLinkClicked()
+    {
+        if(!ServerStatusManager.ServerOnline)
+        {
+            await RefreshPage();
+            return;
+        }
+
+        await UpdateCurrentUser();
+        await OnOpenProfile.InvokeAsync();
+    }
+
+    protected async Task AccessCardClicked()
+    {
+        if(!ServerStatusManager.ServerOnline)
+        {
+            await RefreshPage();
+            return;
+        }
+
+        await UpdateCurrentUser();
+        await OnClickAccessCard.InvokeAsync();
+    }
+
+
+    private async Task UpdateCurrentUser()
+    {
+        if(!ServerStatusManager.ServerOnline)
+        {
+            AccessLevel = "...";
+            await RefreshPage();
+            return;
+        }
+
+        await Authentication.GetUserProfileDataFromDB();
+        if(Authentication.CurrentUser == null)
+        {
+            return;            
+        }
+        else
+        {
+            AccessLevel = Authentication.CurrentUser.AccessLevel;            
+            StateHasChanged();
+        }
+    }
+
+    public async Task RefreshPage()
+    {
+        StateHasChanged();
+    }
+
+    public async Task<Boolean> ForceDisplayUpdate()
+    {
+        if(Authentication.Auth0Client == null || Authentication.Auth0Client.UserName == null)
+        {
+            Console.WriteLine("ForceDisplayUpdate FAILED - Not Authenticated");
+            return false;
+        }
+        else
+        {            
+            if (Authentication.CreateUserProfileData())
+            {
+                if (await Authentication.GetLoggedInUser())
+                {
+                    if (await Authentication.GetAuth0UserID())
+                    {                                                
+                            if (await Authentication.GetAuth0DataRetryWhenFail())
+                        {
+                            //Console.WriteLine("GetUserProfileFromDB - ForceDisplayUpdate - LoginDisplay");
+                            await Authentication.GetUserProfileDataFromDB();
+
+                                    ClientID = Authentication.CurrentUser.ClientID;
+                                    UserName = Authentication.CurrentUser.UserName;
+                                    AccessLevel = Authentication.CurrentUser.AccessLevel;
+
+                                    await RefreshPage();
+                                    return true;          
+                            }
+                    }
+                    Console.WriteLine("ForceDisplayUpdate FAILED");
+                    return false;
+                }
+                Console.WriteLine("ForceDisplayUpdate FAILED");
+                return false;
+            }
+            else
+            {
+                Console.WriteLine("ForceDisplayUpdate FAILED");
+                return false;
+            }
+        }
+    }
+
+    public async Task<Boolean> RefreshDisplayRetryWhenFail()
+    {
+        int currentRetry = 0;
+
+        for (; ; )
+        {
+            try
+            {  
+                if (await ForceDisplayUpdate())
+                {                    
+                    Console.WriteLine("LoginDisplay Forced Update Success!");
+                    return true;
+                }
+                else
+                {
+                    Console.WriteLine("RefreshDisplayRetryWhenFail - LOGINDISPLAY - Failed");
+
+                    currentRetry++;
+
+                    if (currentRetry > this.retryCount)
+                    {
+                        return false;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("RefreshDisplayRetryWhenFail - LOGINDISPLAY - Failed Consecutively");
+
+                currentRetry++;
+
+                if (currentRetry > this.retryCount)
+                {             
+                    return false;
+                }
+            }
+            await Task.Delay(retryDelay);
+        }
+        return true;
+    }
+
+    public async void RefreshPageTimer(object sender, EventArgs e)
+    {
+        //Console.WriteLine("Refresh Timer Updated Page");
+        if(ServerStatusManager.ServerOnline)
+        {
+            if(Authentication.authState.User.Identity.IsAuthenticated)
+            {                
+                if(UserNameString == "Loading..." || ClientIDString == "Loading...")
+                InvokeAsync(ForceDisplayUpdate);
+            }
+        }
+        InvokeAsync(RefreshPage);        
+    }
+
+    void IDisposable.Dispose()
+    {
+        // stop listening
+        serverStatusManager.ServerPolled -= RefreshPageTimer;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        serverStatusManager.ServerPolled += RefreshPageTimer;        
+    }
+
+    protected override async void OnAfterRender(bool firstRender)
+	{
+		if(!ServerStatusManager.ServerOnline)
+		{
+			firstRender = true;
+		}
+
+		// execute conditionally for loading data, otherwise this will load
+		// every time the page refreshes
+		if(firstRender)
+		{			
+			if(ServerStatusManager.ServerOnline)
+			{
+				if(Authentication.authState.User.Identity.IsAuthenticated)
+				{			
+					if (UserName == null)
+                    {
+                        Console.WriteLine("Refresh Display - Page Load - LOGINDISPLAY");
+                        await RefreshDisplayRetryWhenFail();
+                    }  
+				}
+				else
+				{
+					Console.WriteLine("User Not Authenticated - LOGINDISPLAY...");
+					return;
+				}
+			}			
+		}
+	}
+
+}
+
+
+
+<AuthorizeView>
+    <Authorized>
+        <table height="50px" width="224px" cellspacing="4" cellpadding="0">
+            <tr>  
+                <td width="324px" style="text-align:right; color:rgba(79,76,70,1); font-weight:bolder; font-size:20px; vertical-align:middle;">
+                    
+                    <div class="UserBox">
+                        	
+<!--Access Cards-->     @if(!ServerStatusManager.ServerOnline)
+                        {                        
+                            <div style="color:red; font-weight:bolder; font-size:28px">&#x26a0;</div>
+                        }
+                        else
+                        {       
+                            <div style="display:flex; flex-flow: column; justify-content: center;">
+                                @if(UserName == null)
+                                {  
+                                    <div class="spinnerLoginDisplay" style="height: 24px; width: 24px;"></div>
+                                }  
+                            </div>
+                                                                          
+                            @if(AccessLevel == "...")
+                            {
+                                    <a href="" @onclick="@(async () => await @AccessCardClicked())">
+                                        <img src="/img/cards/back_access.png" width="32" height="32" title="Swipe Access Card"/ >  
+                                    </a>
+                            }
+                            @if(AccessLevel == "Bolt Action")
+                            {
+                                    <a href="" @onclick="@(async () => await @AccessCardClicked())">
+                                        <img src="/img/cards/ba_access.png" width="32" height="32" title="Swipe Access Card"/>
+                                    </a>
+                            }
+                            @if(AccessLevel == "Semi-Auto")
+                            {
+                                <a href="" @onclick="@(async () => await @AccessCardClicked())">
+                                    <img src="/img/cards/sa_access.png" width="32" height="32" title="Swipe Access Card"/>        
+                                </a>
+                            }
+                            @if(AccessLevel == "Full Auto")
+                            {
+                                <a href="" @onclick="@(async () => await @AccessCardClicked())">
+                                        <img src="/img/cards/fa_access.png" width="32" height="32" title="Swipe Access Card"/>  
+                                </a>
+                            }
+                            @if(AccessLevel == "Belt Fed")
+                            {
+                                <a href="" @onclick="@(async () => await @AccessCardClicked())">
+                                        <img src="/img/cards/bf_access.png" width="32" height="32" title="Swipe Access Card"/>    
+                                </a>
+                            }
+                            @if(AccessLevel == "Influencer")
+                            {
+                                <a href="" @onclick="@(async () => await @AccessCardClicked())">
+                                        <img src="/img/cards/vip_access.png" width="32" height="32" title="Swipe Access Card"/>   
+                                </a>
+                            }
+                            @if(AccessLevel == "GameMaster")
+                            {
+                                <a href="" @onclick="@(async () => await @AccessCardClicked())">
+                                        <img src="/img/cards/vip_access.png" width="32" height="32" title="Swipe Access Card"/>    
+                                </a>
+                            }
+                        }         
+
+                        
+                        <table class="UBtable" width="180" border="0" cellspacing="0" cellpadding="0">
+                          <tbody>
+
+                            <tr>
+                                                                
+                              <td style="float:right">
+                                  <a href="#" style="color: rgba(180,177,171,1)" @onclick="@(async () => await ProfileLinkClicked())">                                      
+                                            @try
+                                            {
+                                                if(!ServerStatusManager.ServerOnline)
+                                                {
+                                                    <div style="color:red; font-weight:bolder; align-self: center;">
+                                                        Server Offline
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    if(UserName == null)
+                                                    {                                                    
+                                                        <div>
+                                                        @UserNameString                                                    
+                                                        </div>                                                        
+                                                    }
+                                                    else
+                                                    {   
+                                                        @UserName
+                                                    }           
+                                                }                                                                                     
+                                            }
+                                            catch
+                                            {
+                                                <div>Error..</div>
+                                            }
+                                        </a>
+                              </td>
+                            </tr>
+                            <tr>
+                                <td style="float:right">
+                                   
+                                    
+                                        @try
+                                        {
+                                            if(ServerStatusManager.ServerOnline)
+                                            {
+                                                if(UserName == null)
+                                                {
+                                                    <div>
+                                                    @ClientIDString                                                
+                                                    </div>
+                                                }
+                                                else
+                                                {  
+                                                    <div>Client: @ClientID</div>    
+                                                }  
+                                            }                                   
+                                        }
+                                        catch
+                                        {
+                                            <div>Error..</div>
+                                        }                                    
+                                </td>
+                            </tr>
+
+                          </tbody>
+                        </table>
+                        @if(ServerStatusManager.ServerOnline)
+                        {                            
+                            <a href="#" style="color: rgba(180,177,171,1)" @onclick="@(async () => await ProfileLinkClicked())">
+                            <img src="/img/userw.svg" style="float:right" height="32" width="32" alt=""/></a>
+                        }
+                     </div>
+
+                                      
+                </td>
+                <td width="95px" style="text-align:center">
+                    
+                    @if(ServerStatusManager.ServerOnline)
+                    {                        
+                        <form method="post" action="Account/LogOut" style="vertical-align:middle; margin:auto">
+                        <button type="submit" class="button" style="font-size: 16px;">LOGOUT</button>
+                        </form>
+                    }
+                </td>
+            </tr>
+        </table>
+        
+    </Authorized>
+    <NotAuthorized>
+
+    <div class="LoginBox">                
+        @if(ServerStatusManager.ServerOnline)
+            {
+                <div class="OnlineBox">
+
+                    <div class="accessCardL">
+                        <img src="img/cards/back_access.png" width="32px" height="32px" alt="Access Card"/>
+                    </div>
+                
+                    <div class="Online">
+                        @*<a href="Account/Login"><button class="button" style="width:145px;">LOGIN / REGISTER</button></a>*@
+                        <a href="Account/Login"><button class="button" style="width:145px;">BETA TEST LOGIN</button></a>
+                    </div>
+
+                </div>
+            }
+
+        @if(!ServerStatusManager.ServerOnline)
+        {
+                <div class="OfflineBox">
+                        <div class="offlineIcon">
+                            &#x26a0;
+                        </div>
+                
+                        <div class="offline">
+                            SERVER OFFLINE
+                        </div>
+                </div>
+        }
+
+    </div>
+    
+        @*<table height="50px" width="300px" cellspacing="0" cellpadding="0">
+            <tr>
+                <td width="139px" style="text-align:right">
+                    @if(!ServerStatusManager.ServerOnline)
+                    {
+                        <div style="color:red; font-weight:bolder; font-size:28px">&#x26a0;</div>
+                    }
+                    else
+                    {
+                        <img src="/img/cards/back_access.png" width="32" height="32" />
+                    }                    
+                </td>
+                <td width="145px" style="text-align:right;">
+                    @if(!ServerStatusManager.ServerOnline)
+                    {
+                        <div style="color:red; font-weight:bolder;">Server Offline</div>
+                    }
+                    else
+                    {
+                        <a href="Account/Login"><button class="button" style="width:145px;">LOGIN / REGISTER</button></a>
+                    }
+                    
+                </td>
+            </tr>
+        </table>
+        *@
+
+
+    </NotAuthorized>
+</AuthorizeView>

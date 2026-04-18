@@ -1,0 +1,34 @@
+﻿@page "/Legal"
+@using Taxov.Pages
+@using Taxov.Pages.Calculator
+@using Taxov.Pages.Charts
+
+<!doctype html>
+<html>
+<body>
+	
+<div class="pages">
+	<div class="blurthing2">
+<h1 class="pageh1">LEGAL</h1>
+	<br>
+	<div class="legallinks">
+		<AnchorLink class="nav-link py-3 px-4" href="#Disclaimer">&#128195; DISCLAIMER</AnchorLink>
+		<AnchorLink class="nav-link py-3 px-4" href="#TOS">&#128195; TERMS OF SERVICE</AnchorLink>@*
+		<AnchorLink class="nav-link py-3 px-4" href="#Privacy"> &#128195; PRIVACY POLICY</AnchorLink>	*@	
+	</div>
+	<br>
+	</div>
+		<div>
+			<Disclaimer></Disclaimer>
+		</div>
+		<br>
+		<div id="TOS">
+			<TOS></TOS>
+		</div>		
+		<br>@*
+		<div id="Privacy">
+			<Privacy></Privacy>
+		</div>*@
+</div>
+</body>
+</html>

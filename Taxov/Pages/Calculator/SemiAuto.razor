@@ -1,0 +1,373 @@
+﻿@*@page "/SemiAuto"*@
+
+@inherits Taxov.Data.TaxCalculator;
+@using Taxov.Pages
+@using Taxov.Pages.Calculator
+@using Taxov.Pages.Charts
+
+@inject Authentication Authentication;
+@inject NavigationManager NavigationManager
+
+
+@code
+{
+    public string _AccessLevel;
+    public UserModel User;
+    public int _ToolTips = 0;
+
+    private int retryCount = 3;
+    private readonly TimeSpan retryDelay = TimeSpan.FromSeconds(1);
+
+
+    protected override async Task OnInitializedAsync()
+    {        
+        await Authentication.UpdateDatabaseStatus();
+        if(!Authentication.DatabaseOnline)
+        {
+            return;
+        }
+        else
+        {
+            await GetUserSettingsRetryWhenFail();
+        }        
+    }
+
+    protected override async void OnAfterRender(bool firstRender)
+	{
+		// execute conditionally for loading data, otherwise this will load
+		// every time the page refreshes
+		if(firstRender)
+		{			
+			await Authentication.UpdateDatabaseStatus();
+			if(!Authentication.DatabaseOnline)
+			{
+				//NavigationManager.NavigateTo(NavigationManager.BaseUri, forceLoad: true);
+			}
+		}
+	}
+
+        
+    public async Task<Boolean> GetUserSettingsRetryWhenFail()
+    {
+        int currentRetry = 0;
+
+        for (; ; )
+        {
+            try
+            {
+                await Authentication.UpdateDatabaseStatus();
+                if(!Authentication.DatabaseOnline)
+                {
+                    currentRetry++;
+
+                    if (currentRetry > this.retryCount)
+                    {
+                        Console.WriteLine("GetUserSettingsRetryWhenFail - SEMI-AUTO - Failed Consecutively...");
+                        //NavigationManager.NavigateTo(NavigationManager.BaseUri, forceLoad: true);
+                        return false;
+                    }
+                    return false;
+                }   
+
+                if (await GetUSerSettings())
+                {
+                    return true;
+                }
+                else
+                {
+                    Console.WriteLine("GetUserSettingsRetryWhenFail - SEMI-AUTO - Failed");
+
+                    currentRetry++;
+
+                    if (currentRetry > this.retryCount)
+                    {
+                        Console.WriteLine("GetUserSettingsRetryWhenFail - SEMI-AUTO - Failed Consecutively...");
+                        return false;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("GetUserSettingsRetryWhenFail - SEMI-AUTO - Failed");
+
+                currentRetry++;
+
+                if (currentRetry > this.retryCount)
+                {
+                    Console.WriteLine("GetUserSettingsRetryWhenFail - SEMI-AUTO - Failed Consecutively...");
+                    return false;
+                }
+            }
+            await Task.Delay(retryDelay);
+        }
+        return true;
+    }
+
+    public async Task<Boolean> GetUSerSettings()
+    {
+            User = await Authentication.GetUserSettingsFromDB();
+
+            if(User == null)
+            {
+                return false;    
+            }
+            else
+            {
+                _ToolTips = User.ToolTips;
+
+                if(_ToolTips == null)
+                {
+                    _ToolTips = 0;
+                    return false;
+                }
+                return true;
+            }
+    }
+
+    public async Task ToggleTipsOn()
+    {
+        _ToolTips = 1;
+        StateHasChanged();
+    }
+
+     public async Task ToggleTipsOff()
+    {
+        if(User == null)
+		{
+            StateHasChanged();
+			return;
+		}
+
+        if(User.ToolTips == 1)
+        {
+            StateHasChanged();
+            return;
+        }
+        _ToolTips = 0;
+        StateHasChanged();
+    }
+}
+
+
+
+<!doctype html>
+<html>
+
+    <body>
+        <CascadingValue Name="ToolTipState" Value=@_ToolTips>
+<div class="blurthing">
+    <h1 class="pageh1"style="margin-top:0px;">SEMI-AUTO</h1>
+    <div style="position:relative; float:right; z-index: 25; top:-38px; padding-right:10px;">
+			<button class="button" style="background-color:transparent; font-size:30px" @onclick="@(async () => await ResetCalculator())">&#x21ba;</button>
+        </div>
+    <br>
+    <div class="sainput">
+        <table width="434px" border="0" cellspacing="0" cellpadding="2" align="center">
+            <tbody>
+
+                <tr>
+                    <td style="text-align: right; width: 230px">
+                        <ToolTip Text=@ToolTipData.VendorBuyBack()>
+                                <div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>VENDOR BUY BACK &nbsp;&nbsp;</div>
+                        </ToolTip>
+                            
+                        </td>
+                    <td style="width: 180px">
+                         <span class="rubble">&#x20bd;</span>
+                        <input class="userinput" id="buyback" type="number" min="0" @bind-value="VendorBuyBack" @bind-value:event="oninput" @onkeyup="@(async () => await AutoCalculateAsync())">
+                    </td>
+                </tr>
+
+                <tr>
+                    
+                    <td style="text-align: right">
+                        <ToolTip Text=@ToolTipData.DesiredListPrice()>
+                            <div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>DESIRED LIST PRICE &nbsp;&nbsp;</div>
+                        </ToolTip>
+                    </td>
+                    <td>
+                         <span class="rubble">&#x20bd;</span>
+                        <input class="userinput" id="listprice" type="number" min="0" @bind-value="DesiredListPrice" @bind-value:event="oninput" @onkeyup="@(async () => await AutoCalculateAsync())">
+                    </td>
+
+
+                </tr>
+                <tr>
+                    
+                    <td style="text-align: right">
+                        <ToolTip Text=@ToolTipData.Quantity()>
+                            <div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>QUANTITY &nbsp;&nbsp;</div>
+                        </ToolTip>
+                    </td>
+                    <td>
+                         <span class="rubble">&#x20bd;</span>
+                        <input class="userinput" id="quantity" type="number" min="1" @bind-value="ItemQuantity" @bind-value:event="oninput" @onkeyup="@(async () => await AutoCalculateAsync())">
+                    </td>
+
+
+                </tr>
+                <tr>
+                    
+                    <td style="text-align: right; font-size: 14px">
+                        <ToolTip Text=@ToolTipData.BulkSale()>
+                            <div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>BULK SALE&nbsp;&nbsp;&nbsp;&nbsp;</div>
+                        </ToolTip>
+                    </td>
+                    <td>
+                        <input class="checkbox" id="bulksale" type="checkbox" style="margin-left: 17px" @bind="@BulkCheckBox" @onclick="@(async () => await ToggleBulkSaleAsync())">
+                    </td>
+
+                </tr>
+                <tr>
+                    
+                    <td style="text-align: right; font-size: 14px">
+                        <ToolTip Text=@ToolTipData.LevelThreeIntel()>
+                            <div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>LEVEL 3 INTEL&nbsp;&nbsp;&nbsp;&nbsp;</div>
+                        </ToolTip>
+                    </td>
+                    <td>
+                        <input class="checkbox" id="inteldiscount" type="checkbox" style="margin-left: 17px" @bind="@IntelCheckBox" @onclick="@(async () => await ToggleIntelDiscountAsync())">
+                    </td>
+
+                </tr>
+
+            </tbody>
+        </table>
+    </div>
+
+
+
+    <br>
+
+
+
+    <div class="taxbreakdown">
+        <header class="SAcap">
+            TAX BREAKDOWN
+        </header>
+        <table width="434" border="0" cellspacing="0" cellpadding="0" align="center" style="background-color: rgba(22,22,20,1); outline: solid 1px #4f5a61; outline-offset: -1px;">
+            <tbody>
+                <tr>
+                    <td style="width: 200px; color: #73674D">                         
+                       <ToolTip Text=@ToolTipData.EstTaxes()>
+                            <div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>&nbsp;EST. TAXES</div>
+                       </ToolTip>
+                    </td>
+
+                    <td style="width: 20px">
+                        <!--&#8381;-->
+                         <span class="rubble">&#x20bd;</span>
+                    </td>
+                    <td style="width: 214px">
+                         <input class="data" id="totaltax" type="number" disabled style="width: 135px; height: 24px; text-align: right; font-size: 18px; color: #00BDFF;" placeholder="0" @bind="_TotalTax">
+                    </td>
+
+                </tr>               
+
+                <tr>	    
+                      <td style="color: #73674D">
+                          <ToolTip Text=@ToolTipData.TaxPerItem()>
+		                    <div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>&nbsp;PER ITEM</div>
+                          </ToolTip>
+		              </td>
+                      <td>
+		                  @if(BulkSale && ItemQuantity > 1)
+		                  {
+			                <span class="rubble">&#x20bd;</span>
+		                  }
+		                  @if(!BulkSale || ItemQuantity == 1)
+		                  {
+			                  <span class="rubble" style="color: #525759;">&#x20bd;</span>
+		                  }  
+		              </td>
+                      <td>
+		                  @if(BulkSale && ItemQuantity > 1)
+		                  {
+			                  <input class="data" id="taxperitem" type="number" placeholder="0" disabled style="width: 135px; height: 24px; text-align: right; font-size: 18px" @bind="_TaxPerItemDisplay">
+		                  }
+		                  @if(!BulkSale || ItemQuantity == 1)
+		                  {
+			                  <input class="data" id="taxperitem" type="number" placeholder="0" disabled style="width: 135px; height: 24px; text-align: right; font-size: 18px; color: #525759;" @bind="_TaxPerItemDisplay">
+		                  }	
+                      </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <br>
+
+    <div class="saleanalysis">
+        <header class="SAcap">
+            SALE ANALYSIS
+        </header>
+
+        <table width="434" border="0" cellspacing="0" cellpadding="0" align="center" style="background-color: rgba(22,22,20,1); outline: solid 1px #4f5a61; outline-offset: -1px;">
+
+            <tbody>
+             
+            <td style="width: 200px; color: #73674D"> 
+                <ToolTip Text=@ToolTipData.RealizedGains()>
+                    <div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>&nbsp;REALIZED GAIN</div>
+                </ToolTip>
+            </td>
+            <td style="width:20px">
+                <span class="rubble">&#x20bd;</span>
+                </td>
+                <td style="width:214px">
+                @if(_RealizedGains < VendorBuyBack)
+                        {
+                            <input class="data" id="netgains" type="number" onfocus="this.select();" disabled style="width: 135px; height: 24px; text-align: right; font-size: 18px; color:#FF0004;" placeholder="000000000" @bind="_RealizedGains">
+                        }
+                @if(_RealizedGains > VendorBuyBack)
+                {
+                    <input class="data" id="netgains" type="number" onfocus="this.select();" disabled style="width: 135px; height: 24px; text-align: right; font-size: 18px; color: #00FF10;" placeholder="000000000" @bind="_RealizedGains">
+                }
+                @if(_RealizedGains == VendorBuyBack)
+                {
+                    <input class="data" id="netgains" type="number" onfocus="this.select();" disabled style="width: 135px; height: 24px; text-align: right; font-size: 18px; color: rgba(222,152,110,1);" placeholder="000000000" @bind="_RealizedGains">
+                }
+                        
+            </td>
+
+            <tr>
+             
+                <td style="color: #73674D">
+                    <ToolTip Text=@ToolTipData.FleaRepGains()>
+                        <div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>&nbsp;FLEA REP GAIN</div>                        
+                   </ToolTip>
+                </td>
+                <td>
+			        @if(_FleaRepPercentGain >= 1)
+			        {
+				        <span style="color: #00BDFF; font-size:14px;">&#x25b2;</span>
+			        }
+			
+			        @if(_FleaRepPercentGain < 1)
+			        {
+				        <span>&nbsp;</span>
+			        }
+		        </td>
+      	        <td>
+			        @if(_FleaRepPercentGain >= 1)
+			        {
+				        <input class="data" id="flearep" type="number" placeholder="0.0" disabled style="width: 135px;" @bind="_FleaRepPercentGain">
+			        }		
+			        @if(_FleaRepPercentGain < 1)
+			        {
+				        <input class="data" id="flearep" type="number" placeholder="0.0" disabled style="width: 135px; color: rgba(180,177,171,1.00)" @bind="_FleaRepPercentGain">
+			        }	
+		        </td>                
+            </tr>
+            </tbody>
+        </table>
+        <br>
+    </div>
+
+    <p>&nbsp;</p>
+    <p>&nbsp;</p>
+    <p>&nbsp;</p>
+    </div>
+    </CascadingValue>
+</body>
+</html>

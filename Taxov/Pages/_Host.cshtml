@@ -1,0 +1,45 @@
+﻿@page "/"
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@namespace Taxov.Pages
+
+@inject Microsoft.AspNetCore.Components.NavigationManager NavigationManager;
+
+<html class="bgimage">
+    <head>
+        <base href="~/" />
+
+        <!-- Global site tag (gtag.js) - Google Analytics -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=UA-215858757-1"></script>
+        <script>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+
+          gtag('config', 'UA-215858757-1');
+        </script>
+
+
+
+        <title>Taxov</title>
+        <meta name="description" content="Taxov - The Escape From Tarkov Tax Tool is a simple, yet powerful web application that provides metrics and data to demystify the complexities and intricacies of the Tarkov Flea Market." />
+        <meta name="keywords" content="tarkov flea market, tarkov flea market prices, flea market tarkov, tarkov flea market fee, how to make money on flea market tarkov, making money in tarkov, fastest way to make money in tarkov, tarkov flea market profit, tarkov flea market how to sell, tarkov flea market graph, escape from tarkov flea market, tarkov flea market rep, how to use tarkov flea market, tarkov, taxov, flea market, tax, calculator, tool, program " />
+    </head>
+    <body>
+        @try
+        {   
+            if(typeof(App) != null)
+            {
+                <component type="typeof(App)" render-mode="ServerPrerendered" />
+            }        
+        }     
+        catch
+        {
+            <component type="typeof(ServerOffline)" render-mode="ServerPrerendered"/>
+        }
+
+        <script src="_framework/blazor.server.js"></script>  
+        <script src="js/scripts.js"></script>              
+        <script src="https://js.stripe.com/v3/" defer></script>
+        <script src="js/anchorLink.js"></script>
+    </body>
+</html> 

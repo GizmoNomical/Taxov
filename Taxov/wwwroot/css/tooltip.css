@@ -1,0 +1,46 @@
+﻿.tooltip-wrapper {
+    position: relative;
+    display: inline-block;
+    cursor: help;
+ }
+
+span {
+    visibility: hidden;
+    position: absolute;
+    min-width: 7em;
+    width: max-content;
+    max-width: 10.5em;
+    max-height: 6em;
+    top: -100%;
+    right: 105%;
+    z-index:10000;
+    background-color: #363636;
+    color: #fff;
+    text-align: center;
+    padding: 5px;
+    border-radius: 6px;
+    background: url(/img/diagonal.png), linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(79,76,70,1) 100%) repeat;
+    /*outline: solid 1px #525759;*/
+    outline-offset -1px;
+    -moz-box-shadow: 3px 3px 5px #000000;
+    -webkit-box-shadow: 3px 3px 5px #000000;
+    box-shadow: 3px 3px 5px #000000;
+    font-size:14px;
+    font-style:italic;
+    font-weight:bolder;
+}
+
+    /*span::after {
+        content: " ";
+        position: absolute;
+        top: 50%;
+        left: 100%;*/ /* To the right of the tooltip */
+        /*margin-top: -5px;
+        border-width: 6px;
+        border-style: solid;
+        border-color: transparent transparent transparent #525759;
+    }*/
+
+.tooltip-wrapper:hover span {
+    visibility: visible;
+}

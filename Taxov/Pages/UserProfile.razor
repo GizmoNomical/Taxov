@@ -1,0 +1,616 @@
+﻿@*page "/userprofile"*@
+
+@using Auth0.ManagementApi
+@using System.Net
+@using Newtonsoft.Json.Linq
+@using Taxov.Pages
+@using Taxov.Pages.Calculator
+@using Taxov.Pages.Charts
+@using Newtonsoft
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using Taxov.Data
+@using DataLibrary
+@using Microsoft.Extensions.Configuration
+@using Stripe;
+@using global::Stripe
+@using global::Stripe.Checkout
+
+@inject IJSRuntime jsRuntime;
+@inject Authentication Authentication;
+@inject TokenManager tokenManager;
+
+@code
+{
+    [CascadingParameter] private Task<AuthenticationState> authenticationStateTask { get; set; }
+
+    [Parameter]
+    public string AccessLevel { get; set; }
+
+    [Parameter]
+    public int ClientID { get; set; }
+
+    [Parameter]
+    public string UserName { get; set; }
+
+    [Parameter]
+    public string Email { get; set; }
+
+    [Parameter]
+    public int PaidStatus { get; set; }
+
+    [Parameter]
+    public string SubTierName { get; set; }
+
+    private UserModel CurrentUser { get; set; }
+
+    private Subscription Subscription { get; set; }
+
+    private bool _loadingPage = true;
+
+    private bool? verified;
+    private string isVerified;
+
+
+
+    private async Task CheckoutHandler(string priceId)
+    {
+        string CustomerID = await Authentication.GetCustomerIDFromDB();
+        string UserEmail = await Authentication.GetUserEmailFromDB();
+
+        string sessionId = await Authentication.CreateCheckoutSessionAsync(priceId, CustomerID);
+        await jsRuntime.InvokeVoidAsync("redirectToCheckout", sessionId);
+    }
+
+    private async Task UpdateProfile()
+    {   
+        if(!ServerStatusManager.ServerOnline)
+        {
+            StateHasChanged();
+            return;
+        }
+
+        Authentication.UpdateDatabaseStatus();
+
+        if(!Authentication.DatabaseOnline)
+        {
+            return;
+        }
+
+        //await ClearProfileView();
+
+		if(await Authentication.GetLoggedInUser())
+		{
+			if(await Authentication.GetAuth0UserID())
+			{	
+                if(tokenManager.MgmtToken != null)
+                {                    
+                    if(await Authentication.GetAuth0DataRetryWhenFail())
+				    {		
+                        Console.WriteLine("Checking User in Database - USERPROFILE");
+					    if(await Authentication.CheckUserInDatabase())
+                        {   
+
+                            CurrentUser = await Authentication.GetUserProfileDataFromDB();
+                            await SetProfileViewData();
+                            _loadingPage = false;
+                            StateHasChanged(); 
+					    }
+					    else
+					    {
+						    if(await Authentication.UserSetup())
+						    {
+                                CurrentUser = await Authentication.GetUserProfileDataFromDB();
+                                await SetProfileViewData();
+                                _loadingPage = false;
+							    StateHasChanged(); 
+						    }
+					    }					
+				    }
+                }
+			}     
+		}
+    }
+
+    private async Task ClearProfileView()
+    {        
+        string cleared = "...";
+
+        AccessLevel = cleared;
+        StateHasChanged();
+        ClientID = -1;
+        UserName = cleared;
+        Email = cleared;
+        PaidStatus = -1;
+        SubTierName = cleared;
+        verified = null;
+        await Task.Delay(500);
+
+        StateHasChanged();      
+    }
+
+    private async Task SetProfileViewData()
+    {        
+        _loadingPage = true;
+        await ClearProfileView();       
+
+        AccessLevel = CurrentUser.AccessLevel;
+        ClientID = CurrentUser.ClientID;
+        UserName = CurrentUser.UserName;
+        Email = CurrentUser.Email;
+        PaidStatus = CurrentUser.PaidStatus;
+        SubTierName = CurrentUser.SubTierName;
+        CheckEmail();
+        try
+        {
+            await Authentication.GetSubStatusFromStripe();
+        }
+        catch
+        {
+            
+        }        
+        try
+        {
+            Subscription = await Authentication.GetSubscriptionByID(await Authentication.GetSubscriptionIDFromDB());
+            await Authentication.GetSubscriptionPeriod(Subscription);    
+        }
+        catch
+        {
+            
+        }        
+        StateHasChanged();
+    }
+
+    public async Task ToggleToolTips(bool _isActive)
+    {
+        if(!ServerStatusManager.ServerOnline)
+        {
+            StateHasChanged();
+            return;
+        }
+
+        Authentication.UpdateDatabaseStatus();
+
+        if(!Authentication.DatabaseOnline)
+        {
+            StateHasChanged();
+            return;
+        }
+        else
+        {
+            await Authentication.ToggleToolTipsInDB(_isActive);
+            await Authentication.GetUserSettingsFromDB();
+            StateHasChanged();
+        }
+    }
+
+    public async Task ToggleNewsletter(bool _isActive)
+    {
+        if(!ServerStatusManager.ServerOnline)
+        {
+            StateHasChanged();
+            return;
+        }
+
+        Authentication.UpdateDatabaseStatus();
+
+        if(!Authentication.DatabaseOnline)
+        {
+            StateHasChanged();
+            return;
+        }
+        else
+        {            
+        await Authentication.ToggleNewsletterInDB(_isActive);
+        await Authentication.GetUserSettingsFromDB();
+        StateHasChanged();
+        }
+
+    }
+
+    public async Task CheckEmail()
+    {
+        verified = await Authentication.EmailVerificationCheck();
+        if(verified == null)
+        {
+            isVerified = null;   
+        }
+        if(verified == false)
+        {
+            isVerified = "\uFFFD";   
+        }
+        if(verified == true)
+        {
+            isVerified = "\u2714";
+        }
+        Console.WriteLine(verified);
+    }
+
+
+
+    public async Task CancelSub()
+    {
+        if(!ServerStatusManager.ServerOnline)
+        {
+            StateHasChanged();
+            return;
+        }
+
+        Authentication.UpdateDatabaseStatus();
+
+        if(!Authentication.DatabaseOnline)
+        {
+            StateHasChanged();
+            return;
+        }
+        else
+        {
+            await Authentication.CancelSubscriptionAtPeriodEnd(Authentication.Subscription.FirstOrDefault().Id);
+            StateHasChanged();    
+        }
+
+        
+    }
+
+    public async Task ReActivateSub()
+    {
+        if(!ServerStatusManager.ServerOnline)
+        {
+            StateHasChanged();
+            return;
+        }
+
+        Authentication.UpdateDatabaseStatus();
+
+        if(!Authentication.DatabaseOnline)
+        {
+            StateHasChanged();
+            return;
+        }
+        else
+        {
+            await Authentication.ReActivateCancelledSubscription(Authentication.Subscription.FirstOrDefault().Id);
+            StateHasChanged();    
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if(!ServerStatusManager.ServerOnline)
+        {
+            StateHasChanged();
+            return;
+        }
+        
+        Authentication.UpdateDatabaseStatus();
+
+        if(!Authentication.DatabaseOnline)
+        {
+            StateHasChanged();
+            return;
+        }
+        else
+        {
+            await ClearProfileView();
+            await UpdateProfile();
+        }
+
+    }
+
+}
+
+
+<!doctype html>
+<html>
+
+<AuthorizeView>
+<body>    
+<div class="blurthing2">
+    <h1 class="pageh1">USER PROFILE</h1>
+    <div style="position:relative; float:right; z-index: 25; top:-38px; padding-right:10px;font-size:12px; width:120px">
+        <div style="position:relative; float:left;">Not updating?<br>&nbsp;&nbsp;&nbsp;Click here!</div><div><button class="button" style="background-color:transparent; font-size:30px; float:right" @onclick="@(async () => await UpdateProfile())">&#x21ba;</button></div>
+        </div>
+
+            <br><br>
+            <!--Access Cards-->
+            
+            <div class="accessCard" style="width:140px; justify-items:center">
+            @if(!ServerStatusManager.ServerOnline)
+                {
+                    <div class="spinnerUserProfile"></div>
+                    <img src="/img/cards/back_access.png" width="128" height="128"/>
+                }
+            else
+            {
+                @if(_loadingPage)
+                {
+                    <div class="spinnerUserProfile"></div>
+                }
+
+                @if(AccessLevel == "...")
+                {
+                        <img src="/img/cards/back_access.png" width="128" height="128"/>             
+                }
+                @if(AccessLevel == "Bolt Action")
+                {
+                        <img src="/img/cards/ba_access.png" width="128" height="128"/>        
+                }
+                @if(AccessLevel == "Semi-Auto")
+                {
+                        <img src="/img/cards/sa_access.png" width="128" height="128"/>        
+                }
+                @if(AccessLevel == "Full Auto")
+                {
+                            <img src="/img/cards/fa_access.png" width="128" height="128"/>       
+                }
+                @if(AccessLevel == "Belt Fed")
+                {
+                            <img src="/img/cards/bf_access.png" width="128" height="128"/>       
+                }
+                @if(AccessLevel == "Influencer")
+                {
+                            <img src="/img/cards/vip_access.png" width="128" height="128"/>     
+                }
+                @if(AccessLevel == "GameMaster")
+                {
+                            <img src="/img/cards/vip_access.png" width="128" height="128"/>    
+                }
+            }
+            
+            </div>
+
+<br>
+<div class="blurthing" style="width:730px; padding: 4px">
+
+    <table width="730" border="0" cellspacing="0" cellpadding="0">
+    <tbody>
+        <tr>
+                   <td style="width: 500px">   
+                       <div class="sub-headers" style="text-align:center;">ACCOUNT</div>
+                	<table width="500px" border="0" cellspacing="0" cellpadding="0">
+                  <tbody>
+                      @*<tr class="row-border">
+                                <td>
+                                    Access Level:
+                	           	</td>
+                                <td>
+                                    @AccessLevel
+                                    </td>
+                                
+                     </tr>*@
+                      @*<tr class="row-border">
+                              <td style="width:150px">
+                                  ClientID:
+                              </td>
+
+                              <td style="width:350px">
+
+                                  @if(ClientID == -1)
+                                  {
+                                      <div>...</div>
+                                  }
+                                  else
+                                  {
+                                      @ClientID
+                                  }                                  
+                                  </td>                             
+                     </tr>*@
+
+                
+                    <tr class="row-border">
+                              <td>
+                                  Username:
+                              </td>
+
+                              <td style="width:375px">
+
+                                  @UserName
+                                  </td>
+                     </tr>
+                     <tr class="row-border">
+                              <td style="width:125px">
+                                  E-mail:
+                              </td>
+
+                              <td style="width:375px">
+                                  @if(AccessLevel == "Influencer")
+                                    {
+                                        <div>********</div>
+                                    }
+                                    else
+                                    {
+                                        <div>
+                                        @Email &nbsp;&nbsp;                                   
+                                         @if(verified == true)
+                                          {
+                                             <span style="color:green; cursor: default;" title="E-mail Verified">@isVerified</span><span style="font-size:12px"> Verified</span> 
+                                          }
+                                     @if(verified == false)
+                                          {
+                                             <span style="color:orange; position:relative; top:-2; cursor: pointer;" title="E-mail Verification Pending">@isVerified</span><span style="font-size:12px"> Unverified</span>
+                                          } 
+                                          </div>
+                                    }              
+                                  </td>
+                     </tr>
+                     <tr>
+                                <td style="width:125px;">
+                                   Mailing List:                                                 
+                		        </td>
+                                <td>
+                                    @if(Authentication.CurrentUser != null && Authentication.CurrentUser.Newsletter == 0)
+                                    {
+                                     <input type="checkbox" @onclick="@(async () => await ToggleNewsletter(true))"><span style="font-size:12px">Opt In</span>
+                                    }
+                                    @if(Authentication.CurrentUser != null && Authentication.CurrentUser.Newsletter == 1)
+                                    {
+                                     <input type="checkbox" @onclick="@(async () => await ToggleNewsletter(false))" checked><span style="font-size:12px">Opt Out</span>
+                                    }
+                                </td>
+                               
+                      </tr>
+
+
+
+                     </tbody>
+                     </table>
+                     <br>
+                   <div class="sub-headers" style="text-align:center;">
+                      SUBSCRIPTION
+
+                       @if (Authentication.CurrentUser != null && Authentication.SubscriptionStatus != null && Authentication.CurrentUser.AccessLevel != "Influencer" && Authentication.CurrentUser.AccessLevel != "GameMaster")
+                        {
+                            @if (Authentication.SubscriptionStatus == "ACTIVE")
+                            {
+                                <button style="float:right; position:fixed; right:250px; font-weight:bolder; border-radius: 4px; border: -4px solid black;" @onclick="@(async () => await CancelSub())">Cancel &#8856;</button>
+                            }
+                            @if (Authentication.SubscriptionStatus == "ACTIVE (Pending Cancellation)")
+                            {
+                                <button style="float:right; position:fixed; right:250px; font-weight:bolder; border-radius: 4px; border: -4px solid black;" @onclick="@(async () => await ReActivateSub())">Restore &#x21b6;</button>
+                            }
+                        }
+                </div>
+                	<table width="500px" border="0" cellspacing="0" cellpadding="0">
+                  <tbody>
+                     <tr class="row-border">
+                               <td style="width:125px">Tier: 
+                		           </td>
+                               <td>
+
+                                   @SubTierName
+                                </td>                             
+                     </tr>
+                	 <tr class="row-border">    
+                         <td>Status: </td>
+                         <td>        
+                                @if(Authentication.CurrentUser != null && Authentication.SubscriptionStatus != null && Authentication.CurrentUser.AccessLevel != "Influencer" && Authentication.CurrentUser.AccessLevel != "GameMaster")
+                                {
+                                      <div>
+                                          @Authentication.SubscriptionStatus
+                                      </div>          
+                                }
+                                
+                                @if (Authentication.CurrentUser != null && (Authentication.CurrentUser.AccessLevel == "Influencer" || Authentication.CurrentUser.AccessLevel == "GameMaster"))
+                                {
+                                       <div>
+                                          VIP
+                                      </div> 
+                                }
+                         </td>
+                     </tr>
+                     <tr class="row-border">
+                                @if (Authentication.CurrentUser != null && Authentication.SubscriptionStatus != null && Authentication.CurrentUser.AccessLevel != "Influencer" && Authentication.CurrentUser.AccessLevel != "GameMaster")
+                                {
+                                    @if (Authentication.SubscriptionStatus == "ACTIVE")
+                                    {
+                                        <td>
+                                            Renews On: 
+                                        </td>
+                                        <td>
+                                            @Authentication.Subscription.FirstOrDefault().CurrentPeriodEnd &nbsp;&nbsp;&nbsp;
+                                        </td>
+                                    }
+                                    @if (Authentication.SubscriptionStatus == "ACTIVE (Pending Cancellation)")
+                                    {
+                                        <td>
+                                            Expires On: 
+                                        </td>
+                                        <td>
+                                            @Authentication.Subscription.FirstOrDefault().CurrentPeriodEnd &nbsp;&nbsp;&nbsp;
+                                        </td>
+                                    }
+                                    @if (Authentication.SubscriptionStatus == "PAST DUE (Payment Not Received)")
+                                    {
+                                        <td>
+                                            Expired On: 
+                                        </td>
+                                        <td>
+                                            @Authentication.Subscription.FirstOrDefault().CurrentPeriodEnd &nbsp;&nbsp;&nbsp;
+                                            <br>
+                                            Please make a payment today to retain access to our services, or contact billing at <a href="mailto:billing@taxov.tax" style="color: #9a8866">Billing@Taxov.Tax if you have any questions or concerns.</a>
+                                        </td>
+                                    }
+
+                                }
+                                        </tr>                
+                     
+                         </tbody>
+                    </table>
+
+                    <br>
+
+                   <table width="500px" border="0" cellspacing="0" cellpadding="0">
+                  <tbody>
+                       
+                      </tbody>
+                      </table>
+
+	             </td>
+
+                 <!--Right Column-->
+                 
+                 <td width="230px" style="text-align:center;padding:0px 4px; vertical-align: top;">
+                          <div class="sub-headers" style="height: 20px">&#9881;&nbsp;SETTINGS</div>
+                     <table width="230" cellpadding="0" cellspacing="0" border="0" style="text-align: center;">
+                         <tbody>
+                    <tr class="row-border">
+                        <td style="text-align:left;">
+                            TOOL TIPS
+                        </td>
+                    </tr>
+                    <tr class="row-border">
+                        <td>
+                            
+                                @if(Authentication.CurrentUser != null && Authentication.CurrentUser.ToolTips == 0)
+                                {   
+                                 <label>
+                                 <input type="radio" name="toolTips" id="toolTips_0" @onclick="@(async () => await ToggleToolTips(false))" checked>
+                                 &#128473;&nbsp;OFF</label>
+                                }
+                                @if(Authentication.CurrentUser != null && Authentication.CurrentUser.ToolTips == 1)
+                                {
+                                 <label>
+                                 <input type="radio" name="toolTips" id="toolTips_0" @onclick="@(async () => await ToggleToolTips(false))">
+                                 &#128473;&nbsp;OFF</label>
+                                }
+                         </td>
+                         </tr>
+                         <tr class="row-border"><td>
+                             @if(Authentication.CurrentUser != null && Authentication.CurrentUser.ToolTips == 0)
+                             {
+                              <label>
+                              <input type="radio" name="toolTips" id="toolTips_1" @onclick="@(async () => await ToggleToolTips(true))">
+                             &#128161;&nbsp;ON</label>                 
+                             }
+                             @if(Authentication.CurrentUser != null && Authentication.CurrentUser.ToolTips == 1)
+                             {
+                              <label>
+                              <input type="radio" name="toolTips" id="toolTips_1" @onclick="@(async () => await ToggleToolTips(true))" checked>
+                             &#128161;&nbsp;ON</label>                 
+                             }
+                              
+                             </td>
+                         </tr>
+                         </tbody>
+                     </table>
+                 </td>
+                 </tr>
+
+</tbody>
+</table>
+
+        </div>
+        <br>
+     </div>
+        @if(Authentication.CurrentUser != null)
+        {
+            if(Authentication.CurrentUser.AccessLevel == "Bolt Action")
+			{				
+			  <SubOptions></SubOptions>
+			}
+        }
+    
+    </body>
+    
+</AuthorizeView>
+</html>

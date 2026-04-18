@@ -1,0 +1,101 @@
+﻿@*@page "/VendorChart"*@
+
+@inherits Data.TaxCalculator
+@inject IJSRuntime JSRuntime
+
+@code
+{
+    [CascadingParameter] double[] VendorGraphValue { get; set; }
+
+    [CascadingParameter( Name="User" )]
+    private UserModel User { get; set; }
+
+    [CascadingParameter(Name = "ToolTipState")]
+    private int _ToolTips { get; set; } = 0;
+
+    public async Task ToggleTipsOn()
+    {
+        _ToolTips = 1;
+        StateHasChanged();
+    }
+
+     public async Task ToggleTipsOff()
+    {
+        if(User == null)
+		{
+            StateHasChanged();
+			return;
+		}
+
+        if(User.ToolTips == 1)
+        {
+            StateHasChanged();
+            return;
+        }
+        _ToolTips = 0;
+        StateHasChanged();
+    }
+
+
+}
+
+
+
+
+<CascadingValue Name="ToolTipState" Value=@_ToolTips>
+<table class="chart"  width="1100" border="0" cellspacing="0" cellpadding="0">
+<tbody>
+	<tr style="text-align: center;">
+		<th scope="row">MARK UP</th>
+	<td>10%</td>
+	<td>15%</td>
+	<td>20%</td>
+	<td>25%</td>
+	<td>30%</td>
+	<td>35%</td>
+	<td>40%</td>
+	</tr>
+	
+	<tr align="right">
+		<th scope="row"><ToolTip Text=@ToolTipData.VendorChart_BreakEven() isChart=true><div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>BREAK EVEN</div></ToolTip></th>
+      <td class ="chartcolor" ><input class="data" type="number" placeholder="000000" disabled @bind="@VendorGraphValue[0]"></td>
+      <td class ="chartcolor2"><input class="data" type="number" placeholder="000000" disabled @bind="@VendorGraphValue[1]"></td>
+      <td class ="chartcolor" ><input class="data" type="number" placeholder="000000" disabled @bind="@VendorGraphValue[2]"></td>
+      <td class ="chartcolor2"><input class="data" type="number" placeholder="000000" disabled @bind="@VendorGraphValue[3]"></td>
+      <td class ="chartcolor" ><input class="data" type="number" placeholder="000000" disabled @bind="@VendorGraphValue[4]"></td>
+      <td class ="chartcolor2"><input class="data" type="number" placeholder="000000" disabled @bind="@VendorGraphValue[5]"></td>
+      <td class ="chartcolor" ><input class="data" type="number" placeholder="000000" disabled @bind="@VendorGraphValue[6]"></td>
+    </tr>
+   <tr align="right">
+	   <th scope="row"><ToolTip Text=@ToolTipData.VendorChart_BreakEvenGains() isChart=true><div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>&nbsp;&nbsp;GAIN</div></ToolTip></th>
+      <td class ="chartcolora" ><input class="data2" type="number" placeholder="000000" disabled @bind="@VendorGraphValue[7]"></td>
+      <td class ="chartcolor2a"><input class="data2" type="number" placeholder="000000" disabled @bind="@VendorGraphValue[8]"></td>
+      <td class ="chartcolora" ><input class="data2" type="number" placeholder="000000" disabled @bind="@VendorGraphValue[9]"></td>
+      <td class ="chartcolor2a"><input class="data2" type="number" placeholder="000000" disabled @bind="@VendorGraphValue[10]"></td>
+      <td class ="chartcolora" ><input class="data2" type="number" placeholder="000000" disabled @bind="@VendorGraphValue[11]"></td>
+      <td class ="chartcolor2a"><input class="data2" type="number" placeholder="000000" disabled @bind="@VendorGraphValue[12]"></td>
+      <td class ="chartcolora" ><input class="data2" type="number" placeholder="000000" disabled @bind="@VendorGraphValue[13]"></td>
+    </tr>
+    <tr align="right">
+		<th scope="row"><ToolTip Text=@ToolTipData.VendorChart_BaseValue() isChart=true><div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>BASE VALUE</div></ToolTip></th>
+      <td class ="chartcolor" ><input class="data" type="number" placeholder="000000" disabled @bind="@VendorGraphValue[14]"></td>
+      <td class ="chartcolor2"><input class="data" type="number" placeholder="000000" disabled @bind="@VendorGraphValue[15]"></td>
+      <td class ="chartcolor" ><input class="data" type="number" placeholder="000000" disabled @bind="@VendorGraphValue[16]"></td>
+      <td class ="chartcolor2"><input class="data" type="number" placeholder="000000" disabled @bind="@VendorGraphValue[17]"></td>
+      <td class ="chartcolor" ><input class="data" type="number" placeholder="000000" disabled @bind="@VendorGraphValue[18]"></td>
+      <td class ="chartcolor2"><input class="data" type="number" placeholder="000000" disabled @bind="@VendorGraphValue[19]"></td>
+      <td class ="chartcolor" ><input class="data" type="number" placeholder="000000" disabled @bind="@VendorGraphValue[20]"></td>
+    </tr>
+	 <tr align="right">
+		 <th scope="row"><ToolTip Text=@ToolTipData.VendorChart_BaseValueGains() isChart=true><div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>&nbsp;&nbsp;GAIN</div></ToolTip></th>
+      <td class ="chartcolora" ><input class="data2" type="number" placeholder="000000" disabled @bind="@VendorGraphValue[21]"></td>
+      <td class ="chartcolor2a"><input class="data2" type="number" placeholder="000000" disabled @bind="@VendorGraphValue[22]"></td>
+      <td class ="chartcolora" ><input class="data2" type="number" placeholder="000000" disabled @bind="@VendorGraphValue[23]"></td>
+      <td class ="chartcolor2a"><input class="data2" type="number" placeholder="000000" disabled @bind="@VendorGraphValue[24]"></td>
+      <td class ="chartcolora" ><input class="data2" type="number" placeholder="000000" disabled @bind="@VendorGraphValue[25]"></td>
+      <td class ="chartcolor2a"><input class="data2" type="number" placeholder="000000" disabled @bind="@VendorGraphValue[26]"></td>
+      <td class ="chartcolora" ><input class="data2" type="number" placeholder="000000" disabled @bind="@VendorGraphValue[27]"></td>
+    </tr>
+  		</tbody>
+		</table>
+        </CascadingValue>

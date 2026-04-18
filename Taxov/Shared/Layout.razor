@@ -1,0 +1,25 @@
+﻿@inherits LayoutComponentBase
+@namespace Taxov.Shared
+@using Taxov.Pages
+@using Taxov.Pages.Calculator
+@using Taxov.Pages.Charts
+
+@*@inject Authentication Authentication;*@
+@*@inject TokenManager tokenManager;*@
+@inject ServerStatusManager serverStatusManager;
+
+@code
+{
+    [CascadingParameter] protected Task<AuthenticationState> authState { get; set; }
+}
+
+<head>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/effects.css">
+    <meta charset="utf-8">
+    <title>TAXOV: THE TARKOV TAX TOOL</title>
+</head>
+
+<div class="father">
+    @Body
+</div>

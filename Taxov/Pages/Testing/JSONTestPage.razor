@@ -1,0 +1,98 @@
+﻿@*@page "/JSONTest"*@
+
+
+@code
+{
+    public string JSONInput = "";
+    public string JSONOutput = "";
+
+    private void DebugOutput(string text)
+    {
+        try
+        {
+            //System.Diagnostics.Debug.Write(text + Environment.NewLine);
+            DeSerializeJSON(text);
+        }
+        catch(Exception e)
+        {
+            //System.Diagnostics.Debug.Write(e.Message.ToString() + Environment.NewLine);
+            DeSerializeJSON(e.Message.ToString());
+        }
+    }
+
+    public void DeSerializeJSON(string txt)
+    {
+        try
+        {
+            var jItem = JsonConvert.DeserializeObject<dynamic>(txt);
+
+            //JSONOutput = "Here's our JSON Object: " + jItem.ToString();
+            foreach (var guid in jItem)
+            {
+                foreach(var itemNameShort in guid)
+                {
+                    foreach (var sName in itemNameShort)
+                    {
+                        JSONOutput = JSONOutput + ("Here's the: " + sName);
+                    }
+                }
+            }
+
+            //foreach (var i in jItem.GUID001.itemNameShort)
+            //{
+            //   
+            //JSONOutput = JSONOutput + ("Here's the GUID: " + i);
+            //}
+        }
+        catch(Exception e)
+        {
+            DebugOutput("We had a problem: " + e.Message.ToString());
+        }
+
+        
+
+    }
+
+    public void ClearDebug()
+    {
+        JSONInput = null;
+        JSONOutput = null;
+    }
+
+}
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="css/style.css">
+    <meta charset="utf-8">
+    <title>JSON Test...</title>
+    <h1>Json Test...</h1>
+</head>
+    <body>
+        <div style="margin-left: auto; margin-right: auto">       
+
+        <p title="Test 1.2.3."> Testing 1, 2, 3...</p>
+        <br>
+
+        <textarea name="RawJSON" rows="10" cols="30" @bind="@JSONInput">
+
+        </textarea>
+
+        <table>
+        <tr>
+            <td><button @onclick="(() => DebugOutput(JSONInput))">Deserialize</button></td><td><button @onclick="ClearDebug">Clear Debug</button></td>
+        </tr>
+    </table>
+    <br>
+
+    <textarea name="DebugOutput" rows="10" cols="30" @bind="@JSONOutput">
+
+    </textarea>
+
+    </div>
+
+    </body>
+    
+</html>

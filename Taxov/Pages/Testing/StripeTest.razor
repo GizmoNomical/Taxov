@@ -1,0 +1,247 @@
+﻿@*@page "/StripeTest"*@
+@using System.IO
+
+@inject Authentication Authentication;
+@inject ServerStatusManager serverStatusManager;
+@implements IDisposable;
+
+@code
+{
+    string customerID;
+    string subscriptionID;
+
+    string filetext = String.Empty;
+    List<string> values = new List<string>();
+
+
+    bool? verified;
+    string isVerified;
+
+    public async Task CancelSub()
+    {
+        await Authentication.CancelSubscriptionAtPeriodEnd(Authentication.SubscriptionID);
+        StateHasChanged();
+    }
+
+    public async Task ReActivateSub()
+    {
+        await Authentication.ReActivateCancelledSubscription(Authentication.SubscriptionID);
+        StateHasChanged();
+    }
+
+    public async Task CheckEmail()
+    {
+        verified = await Authentication.EmailVerificationCheck();
+        if(verified == null)
+        {
+            isVerified = "Pending";   
+        }
+        if(verified == false)
+        {
+            isVerified = "Not Verified";   
+        }
+        if(verified == true)
+        {
+            isVerified = "Verified";   
+        }
+        Console.WriteLine(verified);
+    }
+
+    public async Task SetEmailNotVerified()
+    {
+        Authentication.Auth0Client.EmailVerified = false;
+    }
+
+    public async Task UpdateTicker()
+    {
+        //foreach(string[] text in values)
+        //{            
+        //    try
+        //    {
+        //        //filetext = text[text];
+        //    }
+        //    catch
+        //    {
+        //        //filetext = string.Empty;
+        //    }
+        //}
+
+        
+        //////
+
+        string path = "/wwwroot/RSSDisplay/testtext.txt";
+
+        //Working Single Element
+        try
+        {
+            //filetext = System.IO.File.ReadAllText(path);
+            filetext = System.IO.File.ReadAllText($"{System.IO.Directory.GetCurrentDirectory()}{@path}");
+        }
+        catch
+        {
+            filetext = string.Empty;
+        }
+        
+        //////
+
+
+        //Console.WriteLine(filetext);
+        StateHasChanged();
+
+    }
+
+    public async Task GetTickerData()
+    {
+        string path = "../Taxov/wwwroot/RSSDisplay/testtext.txt";
+        
+        
+        using (StreamReader reader = new StreamReader(path))
+        {
+            while(!reader.EndOfStream)
+            {
+                //values.Add(reader.ReadLine().Split(','));
+            }
+        }        
+    }
+
+    public async Task RefreshPage()
+	{
+		StateHasChanged();
+	}
+
+	public async void RefreshPageTimer(object sender, EventArgs e)
+    {
+        //Console.WriteLine("Refresh Timer Updated Page");
+        InvokeAsync(this.UpdateTicker);        
+    }
+
+    void IDisposable.Dispose()
+    {
+        // stop listening
+        serverStatusManager.ServerPolled -= RefreshPageTimer;
+    }
+
+    protected override async Task OnInitializedAsync()
+	{	
+		serverStatusManager.ServerPolled += RefreshPageTimer;
+
+        //await GetTickerData();
+
+		if(!ServerStatusManager.ServerOnline)
+		{
+			return;
+		}
+	}
+
+
+
+
+
+
+
+
+}
+
+<html>
+  <head>
+    <title>Stripe Function Test</title>
+  </head>
+  <body>
+      
+      <br>
+      <br>
+      <br>
+      <br>
+      <br>
+
+      <button @onclick="@(async () => await GetTickerData())">Get Ticker Data from File</button>
+        <br>
+
+      <textarea @bind=@filetext width=300px height=300px></textarea>
+
+      <br>
+      <br>
+      <br>
+      <br>
+      <br>
+
+
+
+      <button @onclick="@(async () => await Authentication.GetStripeCustomerFromEmail(Authentication.Auth0Client.Email))">Get Customer From Email</button>
+        <br>
+      <textarea @bind="@Authentication.StripeCustomer" width=300px height=300px></textarea>
+
+
+
+      <br>
+      <br>
+      <br>
+      <br>
+      <br>
+
+      <button @onclick="@(async () => await CheckEmail())">Email Verification</button>
+      <br>
+
+      <textarea @bind=@isVerified width=300px height=300px></textarea>
+      <br />
+      <button @onclick="@(async () => await SetEmailNotVerified())">Email Set Not Verified</button>
+      <br>
+
+
+      <br>
+      <br>
+      <br>
+      <br>
+
+
+
+      <button @onclick="@(async () => await Authentication.GetStripeCustomerList())">Get List Of Customers</button>
+        <br>
+      <textarea @bind="@Authentication.StripeCustomers" width=300px height=300px></textarea>
+      <br>
+      <input type="text" @bind="customerID" />
+      <button @onclick="@(async () => await Authentication.GetStripeCustomerByID(customerID))">Get Customer From ID</button>
+      <br>
+      <textarea @bind="@Authentication.StripeCustomer" width=300px height=300px></textarea>
+      <br>
+      <button @onclick="@(async () => await Authentication.CreateStripeCustomer("test@example.com"))">Create Stripe Customer</button>
+      <br>   
+      <input type="text" @bind="customerID" />
+      <button @onclick="@(async () => await Authentication.GetStripeSubscription(customerID))">Get Subscription Info</button>
+      <br>
+      <textarea @bind="@Authentication.StripeSubscription" width=300px height=300px></textarea>      
+      <br>
+
+      Subscription Status: @if(Authentication.SubscriptionStatus == "ACTIVE")
+        {
+            <div>
+                &nbsp;@Authentication.SubscriptionStatus
+                <br>
+                Renews On: @Authentication.SubscriptionTimeLeft
+                <br><br>    
+                <button @onclick="@(async () => await CancelSub())">Cancel Subscription</button>
+            </div>
+        }
+      @if(Authentication.SubscriptionStatus == "ACTIVE (Pending Cancellation)")
+        {
+            <div>
+                &nbsp;@Authentication.SubscriptionStatus
+                <br>
+                Expires On: @Authentication.SubscriptionTimeLeft
+                <br><br>    
+                <button @onclick="@(async () => await ReActivateSub())">Re-Activate Subscription</button>    
+            </div>
+        }
+
+        <br><br>
+    Subscription Items:@if (Authentication.Subscription != null)
+                        {
+                        <div>@Authentication.Subscription.FirstOrDefault().Items.Data.FirstOrDefault().Plan.Id</div>
+                        }
+
+
+        
+        
+
+</body>
+</html>

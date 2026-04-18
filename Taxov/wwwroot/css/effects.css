@@ -1,0 +1,45 @@
+﻿.spinnerUserProfile {
+    border: 16px solid rgba(180,177,171,1.00);
+    border-top: 16px solid rgba(35,105,148,1);
+    border-radius: 50%;
+    width: 80px;
+    height: 80px;
+    animation: spin 1400ms linear infinite;
+    top: 22.5%;
+    left: 42.5%;
+    position: absolute;
+}
+
+.spinnerPayment {
+    border: 12px solid rgba(180,177,171,1.00);
+    border-top: 12px solid rgba(35,105,148,1);
+    border-radius: 50%;
+    width: 66px;
+    height: 66px;
+    animation: spin 2100ms linear infinite;
+    top: 8%;
+    left: 42.5%;
+    position: absolute;
+}
+
+.spinnerLoginDisplay {
+    border: 4px solid rgba(180,177,171,1.00);
+    border-top: 4px solid rgba(35,105,148,1);
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    animation: spin 1100ms linear infinite;
+    //top: 0%;
+    //left: 0%;
+    position: absolute;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg)
+    }
+
+    100% {
+        transform: rotate(360deg)
+    }
+}

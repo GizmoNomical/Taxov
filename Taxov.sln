@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31612.314
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Taxov", "Taxov\Taxov.csproj", "{4A714A32-52BE-478A-BBF7-55AB403DFFC0}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataLibrary", "DataLibrary\DataLibrary.csproj", "{93C973FB-CE0D-4741-8E3B-6D3752487FC5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4A714A32-52BE-478A-BBF7-55AB403DFFC0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4A714A32-52BE-478A-BBF7-55AB403DFFC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4A714A32-52BE-478A-BBF7-55AB403DFFC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4A714A32-52BE-478A-BBF7-55AB403DFFC0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{93C973FB-CE0D-4741-8E3B-6D3752487FC5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{93C973FB-CE0D-4741-8E3B-6D3752487FC5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{93C973FB-CE0D-4741-8E3B-6D3752487FC5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{93C973FB-CE0D-4741-8E3B-6D3752487FC5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {339537D5-A464-4D54-82F8-4FBDA1CA66DB}
+	EndGlobalSection
+EndGlobal

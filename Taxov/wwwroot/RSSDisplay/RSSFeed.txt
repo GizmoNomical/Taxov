@@ -1,0 +1,13 @@
+
+Taxov - The Tarkov Tax Tool - v 1.0.4
+
+<i>Update 410 - 12/26/2021</i>
+<li>Adjusted Lowest Tax Rate %</li>
+<li>Adjusted High/Low Margins</li>
+
+Taxov Tool Accuracy - 99.99%
+
+<b>Currency Conversion Rates</b>
+USD - 125 &#x20bd; -- EUR - 141 &#x20bd;
+
+<b>Taxov: We do the math, so you don't have to!</b>

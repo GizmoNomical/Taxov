@@ -1,0 +1,42 @@
+﻿@*@page "/Token"*@
+
+@using Microsoft.Extensions.Configuration;
+@using Taxov.Data;
+
+@inject Data.TokenManager tokenManager
+
+@code
+{
+    [CascadingParameter] private Task<AuthenticationState> authenticationStateTask { get; set; }
+}
+
+<style>
+
+body{
+    margin-left: auto;
+    margin-right: auto;
+    width: 1500px;
+}
+</style>
+
+<html>
+    <head>
+
+    </head>
+        <body>        
+            <div>
+                    <br>
+                    <button @onclick="@(async () => await tokenManager.Initialize())">Initialize Token</button>
+                    
+
+                    <br>
+                    Mgmt Token: @tokenManager.MgmtToken
+                    <br>
+                    <br>
+                    Time Before Expiration: @tokenManager._timeBeforeTokenExpires
+                    <br>
+                    Expire Time: 
+
+            </div>
+        </body> 
+</html>

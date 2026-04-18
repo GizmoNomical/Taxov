@@ -1,0 +1,26 @@
+﻿@*@page "/Header"*@
+
+@using Microsoft.AspNetCore.Components.Web;
+@using Taxov.Pages
+@using Taxov.Pages.Calculator
+@using Taxov.Pages.Charts
+
+@inject NavigationManager NavigationManager
+
+@code
+{
+    public NavBar navbar;   
+}
+
+
+    <div class="logo"  id="Top">
+        <a href="" @onclick=@(() => NavigationManager.NavigateTo(NavigationManager.BaseUri, forceLoad: true))>
+        <img src="img/logov3-1.png" width="750" height="200" alt="" />
+        </a>
+    </div>
+    <CascadingValue Value="navbar">
+        <NavBar @ref="navbar"></NavBar>
+    </CascadingValue>
+       
+
+  

@@ -1,0 +1,96 @@
+﻿@*@page "/Validate"
+
+@using Microsoft.Extensions.Configuration
+
+@inject IDataAccess _data;
+@inject IConfiguration _config;
+@inject Authentication Authentication
+
+@code
+{
+    [CascadingParameter] private Task<AuthenticationState> authenticationStateTask { get; set; }
+
+   
+
+    string testEmail = "";
+    string testUserName = "";
+    string testUserID = "";
+
+}
+
+<style>
+
+body{
+    margin-left: auto;
+    margin-right: auto;
+    width: 1500px;
+}
+
+</style>
+
+
+<html>
+    <head>
+
+    </head>
+    <AuthorizeView>
+    <body>
+        <div><br>
+                
+                <br>
+
+
+
+                <label>Test Email</label>
+                <input type="text" @bind="@testEmail"/>
+                <label>Test UserName</label>
+                <input type="text" @bind="@testUserName"/>
+                <label>Test UserID</label>
+                <input type="text" @bind="@testUserID"/>
+
+                <br>
+                <button @onclick="(() => Authentication.InsertTestUser(testEmail, testUserName, testUserID))">Insert Test User</button>
+
+                <br><br>
+                <button @onclick="@Authentication.InsertData">Test Insert</button>
+            <br><br>
+                <button @onclick="@Authentication.UpdateData">Test Update</button>
+            <br><br>
+                <button @onclick="@Authentication.DeleteData">Test Delete</button>
+            <br><br>
+                <button @onclick="@Authentication.InsertNewUser">Test Insert Logged in User</button>
+                <br><br>
+
+                <button @onclick="@Authentication.GetLoggedInUser">Get Logged In User</button>
+                <br><br>
+
+                <button @onclick="@Authentication.CheckUserInDatabase">Check Logged In User</button>
+                <br><br>
+
+                <button @onclick="@Authentication.UserSetup">User Setup</button>
+                <br><br>
+
+
+            Logged in Username:  @Authentication.AuthenticatedUser
+
+
+            @if (Authentication.user == null)
+            {
+                <p><em>Loading...</em></p>
+            }
+            else
+            {
+                @foreach (var u in Authentication.user)
+                {
+                    <p>
+                        @u.ClientID - @u.UserName
+                    </p>
+                }
+            }
+
+            <br>
+            <textarea style="width: 600px; height: 600px;" @bind="@Authentication.JSONDump"></textarea>
+        </div>
+    </body>
+    </AuthorizeView>
+</html>*@

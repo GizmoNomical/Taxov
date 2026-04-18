@@ -1,0 +1,957 @@
+﻿@*@page "/FullAuto"*@
+
+@inherits Taxov.Data.TaxCalculator
+@inject IJSRuntime JSRuntime
+@using Taxov.Pages
+@using Taxov.Pages.Calculator
+@using Taxov.Pages.Charts
+
+@*@inject Authentication Authentication;*@
+@inject NavigationManager NavigationManager
+
+@code
+{
+	private async Task CollapseChart(string id)
+	{		
+		await JSRuntime.InvokeAsync<string>("collapseChart", id);
+	}
+
+	protected override async Task OnInitializedAsync()
+	{		
+		//await Authentication.UpdateDatabaseStatus();
+		//if(!Authentication.DatabaseOnline)
+  //      {
+		//	return;
+  //      }
+		//else
+		//{
+		//	await GetUserSettingsRetryWhenFail();
+		//	await Task.Delay(1000);    
+		//	await JSRuntime.InvokeAsync<string>("collapseChart", "Chart-A");    
+		//	await JSRuntime.InvokeAsync<string>("collapseChart", "Chart-B");
+		//	StateHasChanged();
+		//}	
+		
+	}
+
+	protected override async void OnAfterRender(bool firstRender)
+	{
+		// execute conditionally for loading data, otherwise this will load
+		// every time the page refreshes
+		if(firstRender)
+		{			
+			//await Authentication.UpdateDatabaseStatus();		
+			//await Task.Delay(100);    
+			await JSRuntime.InvokeAsync<string>("collapseChart", "Chart-A");    
+			await JSRuntime.InvokeAsync<string>("collapseChart", "Chart-B");
+			StateHasChanged();
+		}
+	}
+
+
+	//public string _A-webkit-appearancecessLevel;
+ //   public UserModel User;
+    public int _ToolTips = 1;
+
+    //private int retryCount = 3;
+    //private readonly TimeSpan retryDelay = TimeSpan.FromSeconds(1);
+		  
+    //public async Task<Boolean> GetUserSettingsRetryWhenFail()
+    //{
+    //    int currentRetry = 0;
+
+    //    for (; ; )
+    //    {
+    //        try
+    //        {
+				//await Authentication.UpdateDatabaseStatus();
+    //            if(!Authentication.DatabaseOnline)
+    //            {
+    //                currentRetry++;
+
+    //                if (currentRetry > this.retryCount)
+    //                {
+    //                    Console.WriteLine("GetUserSettingsRetryWhenFail - FULL AUTO - Failed Consecutively...");
+    //                    //NavigationManager.NavigateTo("/", forceLoad: true);
+    //                    return false;
+    //                }
+    //                return false;
+    //            }   
+
+    //            if (await GetUSerSettings())
+    //            {
+    //                return true;
+    //            }
+    //            else
+    //            {
+    //                Console.WriteLine("GetUserSettingsRetryWhenFail - FULL AUTO - Failed");
+
+    //                currentRetry++;
+
+    //                if (currentRetry > this.retryCount)
+    //                {
+    //                    Console.WriteLine("GetUserSettingsRetryWhenFail - FULL AUTO - Failed Consecutively...");
+    //                    return false;
+    //                }
+    //            }
+    //        }
+    //        catch (Exception e)
+    //        {
+    //            Console.WriteLine("GetUserSettingsRetryWhenFail - FULL AUTO - Failed");
+
+    //            currentRetry++;
+
+    //            if (currentRetry > this.retryCount)
+    //            {
+    //                Console.WriteLine("GetUserSettingsRetryWhenFail - FULL AUTO - Failed Consecutively...");
+    //                return false;
+    //            }
+    //        }
+    //        await Task.Delay(retryDelay);
+    //    }
+    //    return true;
+    //}
+
+   // public async Task<Boolean> GetUSerSettings()
+   // {
+			//if(!Authentication.DatabaseOnline)
+   //             {
+   //                 return false;
+   //             }
+
+   //         User = await Authentication.GetUserSettingsFromDB();
+
+   //         if(User == null)
+   //         {
+   //             return false;    
+   //         }
+   //         else
+   //         {
+   //             _ToolTips = User.ToolTips;
+
+   //             if(_ToolTips == null)
+   //             {
+   //                 _ToolTips = 0;
+   //                 return false;
+   //             }
+   //             return true;
+   //         }
+   // }
+
+    public async Task ToggleTipsOn()
+    {
+        _ToolTips = 1;
+		StateHasChanged();
+    }
+
+     public async Task ToggleTipsOff()
+    {
+  //      if(User == null)
+		//{
+  //          StateHasChanged();
+		//	return;
+		//}
+
+  //      if(User.ToolTips == 1)
+  //      {
+  //          StateHasChanged();
+  //          return;
+  //      }
+        _ToolTips = 1;
+        StateHasChanged();
+    }
+
+}
+
+
+<!doctype html>
+<html>
+<body>
+	<CascadingValue Name="ToolTipState" Value=@_ToolTips>
+<div class="fathings">
+	<div class="blurthing2">	
+		<h1 class="pageh1"style="margin-top:0px;">TAXOV TOOLS</h1>
+		<div style="position:relative; float:right; z-index: 25; top:-38px; padding-right:10px;">
+			<button class="button" style="background-color:transparent; font-size:30px" @onclick="@(async () => await ResetCalculator())">&#x21ba;</button>
+        </div>
+	
+	<Exchange></Exchange>
+		
+<div class="part1" style="width: 750px">
+
+<div class=navbar style="font-size:14px; height:20px;">
+	Enter all values in Roubles &#x20bd;.  &nbsp; Use Currency Exchange to convert values.
+</div>
+<br>
+<table width="750" border="0" cellspacing="0" cellpadding="0">
+  <tbody>
+    <tr valign="top" width="375px">
+      <td>
+		<div class="left">
+		<table width="375" border="0" cellspacing="0" cellpadding="2" align="left">
+  <tbody>
+
+	  @*Vendor Selector*@
+
+	  <tr>
+		
+         	<td width="170" style="text-align: right; font-size: 18px">
+				<ToolTip Text=@ToolTipData.VendorSelection()>
+                        <div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>VENDOR</div>
+                </ToolTip>
+		</td>
+		
+      	<td width="2"></td>
+      
+		<td width="160">
+		  <span class="rubble">&#x20bd;</span>
+			<select class="vendordropdown" name="VendorList" id="VendorList" @bind-value="VendorSelector" @bind-value:event="onchange" @onclick="@(async () => await AutoCalculateAsync())">				
+				
+				<option value="1">Therapist</option>
+				<option value="2">Ragman</option>
+				<option value="3">Jaeger</option>
+				<option value="4">Mechanic</option>
+				<option value="5">Prapor</option>	
+				<option value="6">Peacekeeper</option>
+				<option value="7">Skier</option>				
+				<option value="8">Fence</option>
+			</select>
+		</td>
+    </tr>
+
+
+	  
+    <tr>
+		
+         	<td width="170" style="text-align: right; font-size: 18px">
+				<ToolTip Text=@ToolTipData.VendorBuyBack()>
+                        <div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>VENDOR BUY BACK</div>
+                </ToolTip>
+		</td>
+		
+      	<td width="2"></td>
+      
+		<td width="160">
+		  <span class="rubble">&#x20bd;</span>
+			<input class="userinput" id="buyback" type="number" min="0" max="100000000" @bind-value="VendorBuyBack" @bind-value:event="oninput" @onkeyup="@(async () => await AutoCalculateAsync())">
+		</td>
+    </tr>
+	  
+    <tr>
+    
+      <td style="text-align: right; font-size: 18px">		
+		  <ToolTip Text=@ToolTipData.DesiredListPrice()>
+                <div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>DESIRED LIST PRICE</div>
+          </ToolTip>	
+		</td>
+      <td>&nbsp;</td>
+		
+      <td>		   
+		   <span class="rubble">&#x20bd;</span>
+		   <input class="userinput" id="listprice" type="number" min="0" max="100000000" @bind-value="DesiredListPrice" @bind-value:event="oninput" @onkeyup="@(async () => await AutoCalculateAsync())">
+		</td>
+    </tr>
+	  	  
+    <tr>
+      
+      <td style="text-align: right; font-size: 18px">
+		  <ToolTip Text=@ToolTipData.Quantity()>
+				<div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>QUANTITY</div>
+          </ToolTip>		  
+		</td>
+      <td>&nbsp;</td>
+		
+      <td>
+		  <input class="userinput" id="quantity" type="number" min="1" style="width: 60px; margin-left: 17px;" @bind-value="ItemQuantity" @bind-value:event="oninput" @onkeyup="@(async () => await AutoCalculateAsync())">
+		  
+		</td>
+    </tr>
+	  
+	@if(ItemQuantity > 1)
+	{
+	  <tr>
+      <td style="text-align: right; font-size: 14px">
+		  <ToolTip Text=@ToolTipData.BulkSale()>
+				<div style="color: rgba(180,177,171,1.00)" @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>BULK SALE</div>
+          </ToolTip>
+		 </td>
+      <td>&nbsp;</td>
+		
+      <td style="text-align: left">
+		  
+		     <input type="checkbox" class="checkbox" id="bulksale" @bind="@BulkCheckBox" @onclick="@(async () => await ToggleBulkSaleAsync())">			 
+			 
+		</td>
+    </tr>
+	}
+	  
+	  <tr>
+		  	   
+      <td style="text-align: right; font-size: 18px">
+		  <ToolTip Text=@ToolTipData.LevelThreeIntel()>
+                <div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>LEVEL 3 INTEL</div>
+          </ToolTip>
+		</td>
+      <td>
+		  &nbsp;
+	  </td>
+		
+      <td style="text-align: left">
+		  <input class="checkbox" id="inteldiscount" type="checkbox" @bind="@IntelCheckBox" @onclick="@(async () => await ToggleIntelDiscountAsync())">
+		  @if(IntelCheckBox)
+		  {
+			  <a style="color: #00FF10;">
+
+				  &nbsp;
+				 @(double.Parse((_DiscountPercentage * 100).ToString(".##")))%
+
+			  </a>
+		  }
+		  @if(!IntelCheckBox)
+		  {
+		      <span>
+				  &nbsp;
+			  </span>
+		  }
+		</td>
+    </tr>	
+
+	@if(IntelCheckBox)
+		  {
+			  <tr>
+		  	   
+			  <td style="text-align: right; font-size: 14px">
+				  <ToolTip Text=@ToolTipData.HideoutMgmtLevel()>
+						<div style="color: rgba(180,177,171,1.00)" @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>HIDEOUT MGMT</div>
+				  </ToolTip>
+				</td>
+			  <td>&nbsp;</td>
+		
+			  <td>
+				  <input class="userinput" id="hideoutmgmtlevel" type="number" min="0" max="50" style="width: 60px; margin-left: 17px" @bind-value="HideoutMgmtLevel" @bind-value:event="oninput" @onkeyup="@(async () => await AutoCalculateAsync())">
+				</td>
+			</tr>	
+		  }
+	 
+	   
+	    <tr>
+			     
+      <td style="text-align: right; font-size: 18px">
+		 <ToolTip Text=@ToolTipData.MarketPrice()>
+                <div style="color: rgba(180,177,171,1.00)" @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>MARKET PRICE</div>
+          </ToolTip>
+		</td>
+      <td></td>
+		
+      <td>		   
+		   <span class="rubble">&#x20bd;</span>
+		   <input class="userinput" id="marketprice" type="number" min="0" max="100000000" @bind-value="MarketPrice" @bind-value:event="oninput" @onkeyup="@(async () => await AutoCalculateAsync())">
+		</td>
+    </tr>
+	    <tr>
+	     
+      <td style="text-align: right; font-size: 18px">
+		  <ToolTip Text=@ToolTipData.Investments()>
+                <div style="color: rgba(180,177,171,1.00)" @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>INVESTMENT</div>
+          </ToolTip>
+		  
+
+      </td>
+      <td>&nbsp;</td>
+		
+      <td><span class="rubble">&#x20bd;</span>
+		  <input class="userinput" id="investment" type="number" max="100000000" @bind-value="Investments" @bind-value:event="oninput" @onkeyup="@(async () => await AutoCalculateAsync())">
+			</td>
+    </tr>
+	  
+  </tbody>
+</table>
+			
+		</div>
+		</td>
+
+<!-- Top Right Data-->
+
+
+      <td width="375px" align="right">
+		  <div class="right">
+		<table width="300px" border="0" cellspacing="0" cellpadding="0" >
+      <tbody>
+        <tr>  
+		
+          <td  class="infotable" style="width: 75px">
+			  
+			  <ToolTip Text=@ToolTipData.BaseValue()>
+					<div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>BASE VALUE</div>
+			  </ToolTip>
+			</td>
+          <td style="width: 17px">
+			  <span class="rubble" style="color: rgba(180,177,171,1.00)">&#x20bd;</span>
+			</td>
+          <td style="width: 148px">
+			  <input class="data" id="basevalue" type="number" placeholder="000000" disabled style="color: rgba(180,177,171,1.00)" @bind="_TotalBaseValue">
+			</td>
+        </tr>
+        
+
+		  <tr>
+			
+		   <td class="infotable">
+			   <ToolTip Text=@ToolTipData.BreakEven()>
+					<div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>BREAK EVEN</div>
+			  </ToolTip>			  
+			  </td>
+          <td>
+			  <span class="rubble">&#x20bd;</span>
+			  </td>
+          <td>
+			  <input class="data" id="breakeven" type="number" placeholder="000000" disabled style="color:rgba(222,152,110,1);" @bind="_BreakEvenPrice">
+			  </td>
+        </tr>
+
+		<tr>
+			
+		   <td class="infotable">
+			   <ToolTip Text=@ToolTipData.UpperLimit()>
+					<div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>UPPER LIMIT</div>
+			  </ToolTip>			  
+			  </td>
+          <td>
+			  <span class="rubble">&#x20bd;</span>
+			  </td>
+          <td>
+			  <input class="data" id="upperlimit" type="number" placeholder="000000" disabled style="color:rgba(222,152,110,1);" @bind="_UpperLimitPrice">
+			  </td>
+        </tr>
+
+
+		<tr>	
+			 
+          	<td class="infotable">
+				  <ToolTip Text=@ToolTipData.LowestTaxPercentage()>
+					<div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>LOWEST TAX %</div>
+				  </ToolTip>	
+			</td>
+			 <td>
+				<span class="rubble">&#x20bd;</span>
+			</td>
+          	<td>
+			  <input class="data" id="lowesttax" type="number" placeholder="000000" disabled @bind="_LowestTax">
+			</td>
+        </tr>
+		 <tr style="height: 8px; font-size: 8px">
+		 </tr>
+		 <tr>
+		  	<td class="infotable">
+				  <ToolTip Text=@ToolTipData.MarginHigh()>
+					<div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>MARGIN HIGH</div>
+				  </ToolTip>	
+			 </td>
+			  <td>
+				  <span class="rubble" style="color: rgba(180,177,171,1.00)">&#x20bd;</span>
+			 </td>
+			  <td>
+			    <input class="data" id="marginhigh" type="number" placeholder="000000" disabled style="color: rgba(180,177,171,1.00)" @bind="_MarginHigh">
+			  </td>
+		  </tr>
+	<tr>
+
+      <td class="infotable">		
+				<ToolTip Text=@ToolTipData.MarginLow()>
+					<div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>MARGIN LOW</div>
+				</ToolTip>
+			  </td>
+			<td>
+				<span class="rubble" style="color: rgba(180,177,171,1.00)">&#x20bd;</span>
+			 </td>
+      		<td>
+				<input class="data" id="marginlow" type="number" placeholder="000000" disabled style="color: rgba(180,177,171,1.00)" @bind="_MarginLow">
+			</td>
+    </tr>		  
+		  <tr style="height: 8px; font-size: 8px">
+		  </tr>
+    <tr>
+ 	 	<td class="infotable" style="width: 112px">
+				  <ToolTip Text=@ToolTipData.Valuation()>
+					<div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>VALUATION</div>
+				  </ToolTip>  
+		</td>
+		<td>&nbsp;
+			
+		</td>
+      	<td>
+			  @if(MarketPrice <= 0)
+			  {
+				  <input class="data" id="valuation" type="number" placeholder="0.0" disabled style="color: #525759;" @bind="_Valuation">
+			  }
+			  @if(MarketPrice > 0)
+			  {
+				  <input class="data" id="valuation" type="number" placeholder="0.0" disabled @bind="_Valuation">
+			  }
+			
+		</td>
+    </tr>
+	<tr>
+ 	 	<td class="infotable" style="width: 112px">
+				  <ToolTip Text=@ToolTipData.FleaRepGains()>
+					<div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>FLEA REP GAIN</div>
+				  </ToolTip>  
+			
+			  </td>
+		<td>
+			@if(_FleaRepPercentGain >= 1)
+			{
+				<div style="color: #00BDFF; font-size:14px;">&#x25b2;</div>
+			}
+			
+			@if(_FleaRepPercentGain < 1 && _FleaRepPercentGain > 0)
+			{
+				<div style="font-size:14px; color: rgba(180,177,171,1.00);">&#x25b2;</div>
+			}
+			@if(_FleaRepPercentGain < 0)
+			{
+				<div style="color: #FF0004; font-size:14px;">&#x25bc;</div>
+			}
+		</td>
+      	<td>
+			@if(_FleaRepPercentGain >= 1)
+			{
+				<input class="data" id="flearep" type="number" placeholder="0.0" disabled @bind="_FleaRepPercentGain">
+			}		
+			@if(_FleaRepPercentGain < 1 && _FleaRepPercentGain > 0)
+			{
+				<input class="data" id="flearep" type="number" placeholder="0.0" disabled style="color: rgba(180,177,171,1.00)" @bind="_FleaRepPercentGain">
+			}
+			@if(_FleaRepPercentGain < 0)
+			{															
+				<input class="data" id="flearep" type="number" placeholder="0.0" disabled style="color: #FF0004" @bind="_FleaRepPercentGain">
+			}
+
+		</td>
+    </tr>
+			 
+  </tbody>
+</table>
+		<p>&nbsp;</p>
+		  </div>
+		
+		</td>
+    </tr>
+  </tbody>
+</table>
+
+	</div>	
+ 
+		<br>
+<div class="stats">
+	<table width="550" border="0" cellspacing="0" cellpadding="0" align="center">
+  <tbody>
+    <tr>
+<!-- Tax Breakdown-->
+      <td valign="top">
+	
+		  <table width="263" border="0" cellspacing="0" cellpadding="0">
+  <caption class="caption">
+    TAX BREAKDOWN
+  </caption>
+  <tbody>
+	  
+    <tr class="row-border" style="background: rgba(22,22,20,1)">
+          <td class="infotable" style="height: 32px; width: 140px; font-size: 16px">
+				  <ToolTip Text=@ToolTipData.EstTaxes()>
+					<div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>&nbsp;&nbsp;EST. TOTAL</div>
+				  </ToolTip>  
+		  </td>
+      <td style="width: 17px"><span class="rubble">&#x20bd;</span></td>
+      <td>		  
+		  <input class="data" id="totaltax" type="number" placeholder="000000" disabled style="color: #00BDFF;" @bind="_TotalTax">		  
+		  </td>
+    </tr>
+	  
+	  <tr>
+	    
+      <td class="infotable">
+				  <ToolTip Text=@ToolTipData.TaxPerItem()>
+					<div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>&nbsp;PER ITEM</div>
+				  </ToolTip>  
+		  </td>
+      <td>
+		  @if(BulkSale && ItemQuantity > 1)
+		  {
+			<span class="rubble">&#x20bd;</span>
+		  }
+		  @if(!BulkSale || ItemQuantity == 1)
+		  {
+			  <span class="rubble" style="color: #525759;">&#x20bd;</span>
+		  }  
+		  </td>  
+      <td>
+		  @if(BulkSale && ItemQuantity > 1)
+		  {
+			  <input class="data" id="taxperitem" type="number" placeholder="000000" disabled @bind="_TaxPerItemDisplay">
+		  }
+		  @if(!BulkSale || ItemQuantity == 1)
+		  {
+			  <input class="data" id="taxperitem" type="number" placeholder="000000" disabled style="color: #525759;" @bind="_TaxPerItemDisplay">
+		  }		
+	 </td>
+    </tr>
+	  
+	  <tr>
+	   
+      <td class="infotable">
+				  <ToolTip Text=@ToolTipData.StandardTax()>
+					<div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>&nbsp;STANDARD TAX</div>
+				  </ToolTip> 
+		  </td>
+      <td>
+		  @if(IntelDiscount)
+		  {
+				<span class="rubble" style="color: #525759;">&#x20bd;</span>
+			  
+		  }
+		  @if(!IntelDiscount)
+		  {
+				<span class="rubble">&#x20bd;</span>
+			  
+		  }
+		  
+		  </td>
+      <td>
+		  @if(IntelDiscount)
+		  {
+			  <input class="data" id="tax" type="number" placeholder="000000" disabled style="color: #525759;" @bind="_StandardTax">
+		  }
+		  @if(!IntelDiscount)
+		  {
+			  <input class="data" id="tax" type="number" placeholder="000000" disabled @bind="_StandardTax">
+		  }
+		  
+		  
+		  </td>
+    </tr>
+	  
+	  <tr>
+	    
+      <td class="infotable">
+				  <ToolTip Text=@ToolTipData.DiscountTax()>
+					<div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>&nbsp;DISCOUNTED TAX</div>
+				  </ToolTip> 
+		  </td>
+      <td>
+		  @if(IntelDiscount)
+		  {
+			<span class="rubble">&#x20bd;</span>  
+		  }
+		  @if(!IntelDiscount)
+		  {
+			  <span class="rubble" style="color: #525759;">&#x20bd;</span>
+		  }
+		  
+		  </td>
+      <td>
+		  
+		  @if(IntelDiscount)
+		  {
+			  <input class="data" id="discounttax" type="number" placeholder="000000" disabled @bind="_DiscountTax">
+		  }
+		  @if(!IntelDiscount)
+		  {
+			  <input class="data" id="discounttax" type="number" placeholder="000000" disabled style="color: #525759;" @bind="_DiscountTax">
+		  }
+		  
+	  </td>
+    </tr>
+	  
+	  <tr>
+	    
+      <td class ="infotable" style="font-size: 12px">	
+				  <ToolTip Text=@ToolTipData.DiscountSavings()>
+					<div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>&nbsp;DISCOUNT SAVINGS</div>
+				  </ToolTip>
+		 
+		  </td>
+      <td>
+		  @if(IntelDiscount)
+		  {
+			<span class="rubble">&#x20bd;</span>  
+		  }
+		  @if(!IntelDiscount)
+		  {
+			  <span class="rubble" style="color: #525759;">&#x20bd;</span>
+		  }
+
+		  </td>
+      <td>
+		  @if(IntelDiscount)
+		  {
+			  <input class="data" id="discountsavings" type="number" placeholder="000000" disabled style="color: #00FF10;" @bind="_DiscountSavings">
+		  }
+		  @if(!IntelDiscount)
+		  {
+			  <input class="data" id="discountsavings" type="number" placeholder="000000" disabled style="color: #525759;" @bind="_DiscountSavings">
+		  }
+		  </td>
+    </tr>
+	  
+	  <tr>
+	    
+      <td class="infotable" style=" font-size: 12px">
+				 <ToolTip Text=@ToolTipData.TaxPercentOfBase()>
+					<div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>&nbsp;TAX % OF BASE</div>
+				  </ToolTip>		  
+		  </td>
+      <td></td>
+      <td style="font-size: 18px"><input class="data" id="taxbasevalue" type="number" placeholder="0&#37;" disabled style="color: rgba(180,177,171,1.00)" @bind="_TaxPercentOfBase"></td>
+    </tr>
+	  
+	  <tr>
+	    
+      <td class="infotable" style="font-size: 12px">
+				  <ToolTip Text=@ToolTipData.PercentPaidInTax()>
+					<div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>&nbsp;% PAID IN TAX</div>
+				  </ToolTip>			  
+		  </td>
+      <td></td>
+      <td><input class="data" id="taxpercent" type="number" placeholder="0&#37;" disabled @bind="_PercentPaidInTax"></td>
+    </tr>
+		  
+  </tbody>
+</table>		  
+		
+		</td>	
+		
+      <td align="right">
+		    <table width="263" border="0" cellspacing="0" cellpadding="0">
+  <caption class="caption">
+    SALE ANALYSIS
+  </caption>
+  <tbody>
+	  
+    <tr>
+      <td class="infotable" style="width: 140px">
+				<ToolTip Text=@ToolTipData.SaleGross()>
+					<div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>SALES GROSS</div>
+				  </ToolTip>	
+		  </td>
+      <td><span class="rubble">&#x20bd;</span></td>
+      <td><input class="data" id="net gains" type="number" placeholder="000000" disabled @bind="_SaleGross"></td>
+    </tr>
+	  
+	  <tr>
+      <td class="infotable">
+				  <ToolTip Text=@ToolTipData.SaleNet()>
+					<div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>SALES - TAX</div>
+				  </ToolTip>			 	 
+		  </td>
+      <td><span class="rubble">&#x20bd;</span></td>
+      <td>	  
+		  
+		  <input class="data" id="salenet" type="number" placeholder="000000" disabled style="color: rgba(180,177,171,1.00)" @bind="_SaleNet">		  
+		  
+		  </td>
+    </tr>
+	  
+	  <tr class="row-border" style="background: rgba(22,22,20,1)">
+      <td class="infotable" style="height: 32px; width: 140px; font-size: 16px">
+				<ToolTip Text=@ToolTipData.RealizedGains()>
+					<div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>&nbsp;&nbsp;REALIZED GAINS</div>
+				  </ToolTip>
+		  </td>
+      <td><span class="rubble">&#x20bd;</span></td>
+      <td>
+		  @if(_RealizedGains < VendorBuyBack)
+		  {
+			  <input class="data" id="salegross" type="number" placeholder="000000" disabled style="color:#FF0004;" @bind="_RealizedGains">
+		  }
+		  @if(_RealizedGains > VendorBuyBack)
+		  {
+			  <input class="data" id="salegross" type="number" placeholder="000000" disabled style="color:#00FF10;" @bind="_RealizedGains">
+		  }
+		  @if(_RealizedGains == VendorBuyBack)
+		  {
+			  <input class="data" id="salegross" type="number" placeholder="000000" disabled style="color:rgba(222,152,110,1);" @bind="_RealizedGains">
+		  }
+		  </td>
+    </tr>
+	  
+	  <tr>
+      <td class ="infotable">&nbsp;
+		  
+		  </td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+	  	 	  
+  </tbody>
+</table>
+		
+		<table width="263" border="0" cellspacing="0" cellpadding="0">
+  <caption class="caption" style="font-size: 16px">
+	  
+    
+	  PER ITEM PROFIT
+  </caption>
+  <tbody>
+	  
+    <tr>
+      <td class="infotable" style="width: 140px">
+				  <ToolTip Text=@ToolTipData.PerItemProfitOverVendor()>
+					<div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>OVER VENDOR</div>
+				  </ToolTip>		  
+		  </td>
+      <td style="width: 17px">
+		  @if(BulkSale && ItemQuantity > 1)
+		  {
+			<span class="rubble" style="color:rgba(180,177,171,1.00);">&#x20bd;</span>  
+		  }
+		  @if(!BulkSale || ItemQuantity == 1)
+		  {
+			  <span class="rubble" style="color: #525759;">&#x20bd;</span>
+		  }		
+		  
+		  
+		  </td>
+      <td>
+		  @if(BulkSale && ItemQuantity > 1)
+		  {
+			  <input class="data" id="netgains" type="number" placeholder="000000" disabled style="color:rgba(180,177,171,1.00);" @bind="_PerItemProfit_OverVendor">
+		  }
+		  @if(!BulkSale || ItemQuantity == 1)
+		  {
+			  <input class="data" id="netgains" type="number" placeholder="000000" disabled style="color:#525759;" @bind="_PerItemProfit_OverVendor">
+		  }		
+		  
+		  </td>
+    </tr>
+	  
+	<tr>
+      <td class="infotable" style="width: 140px">
+				  <ToolTip Text=@ToolTipData.PerItemProfitGross()>
+					<div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>ITEM - TAX</div>
+				  </ToolTip>
+		  </td>
+      <td style="width: 17px">
+		  @if(BulkSale && ItemQuantity > 1)
+		  {
+			<span class="rubble" style="color:rgba(180,177,171,1.00);">&#x20bd;</span>  
+		  }
+		  @if(!BulkSale || ItemQuantity == 1)
+		  {
+			  <span class="rubble" style="color: #525759;">&#x20bd;</span>
+		  }	
+		  
+		  </td>
+      <td>
+		  @if(BulkSale && ItemQuantity > 1)
+		  {
+			  <input class="data" id="gross" type="number" placeholder="000000" disabled style="color: rgba(180,177,171,1.00);" @bind="_PerItemProfit_Gross">
+		  }
+		  @if(!BulkSale || ItemQuantity == 1)
+		  {
+			  <input class="data" id="gross" type="number" placeholder="000000" disabled style="color: #525759;" @bind="_PerItemProfit_Gross">
+		  }		
+		  
+		  </td>
+    </tr>
+	  
+	  <tr>
+      <td class="infotable" style="width: 140px">
+				  <ToolTip Text=@ToolTipData.PerItemProfitRealized()>
+					<div @onclick=@ToggleTipsOn @onmouseout=@ToggleTipsOff>REALIZED</div>
+				  </ToolTip>
+		  </td>
+      <td style="width: 17px">
+		  @if(BulkSale && ItemQuantity > 1)
+		  {
+			<span class="rubble">&#x20bd;</span>  
+		  }
+		  @if(!BulkSale || ItemQuantity == 1)
+		  {
+			  <span class="rubble" style="color: #525759;">&#x20bd;</span>
+		  }			
+		  
+		  </td>
+      <td>
+		  @if(BulkSale && ItemQuantity > 1)
+		  {
+			   @if(_RealizedGains < VendorBuyBack)
+			  {
+				<input class="data" id="net" type="number" placeholder="000000" disabled style="color:#FF0004;" @bind="_PerItemProfit_Realized">  
+			  }
+			  @if(_RealizedGains > VendorBuyBack)
+			  {
+				  <input class="data" id="net" type="number" placeholder="000000" disabled style="color:#00FF10;" @bind="_PerItemProfit_Realized">
+			  }
+			  @if(_RealizedGains == VendorBuyBack)
+			  {
+				  <input class="data" id="net" type="number" placeholder="000000" disabled style="color:#00BDFF;" @bind="_PerItemProfit_Realized">
+			  }
+
+		  }
+		  @if(!BulkSale || ItemQuantity == 1)
+		  {
+			  <input class="data" id="net" type="number" placeholder="000000" disabled style="color: #525759;" @bind="_PerItemProfit_Realized">
+		  }				  
+		  
+		  </td>
+    </tr>
+	  
+  </tbody>
+</table>
+
+		
+		</td>
+    </tr>
+  </tbody>
+</table>
+
+	
+	<br>
+	</div>
+	</div>
+		
+	
+		<div class="charts" align="center">
+			<div class="chart-header">
+				QUICK REFERENCE CHARTS
+			</div>
+						
+	<button class="collapsible" id="Chart-A" @onclick="@(() => CollapseChart("Chart-A"))">VENDOR MARK UP</button>
+	<div class="content" >	
+		<div class="scrollchart">
+			<CascadingValue Value="@(VendorGraphValue)">
+				<VendorChart></VendorChart>
+			</CascadingValue>
+		</div>
+	</div>
+	
+<!-- Chart Break-->
+	
+	<button class="collapsible" id="Chart-B" @onclick="@(() => CollapseChart("Chart-B"))">MARKET MARK UP / DOWN</button>
+	<div class="content">	
+		<div class="scrollchart">
+				<CascadingValue Value="@MarketGraphValue">
+					<CascadingValue Value="@MarketGraphLossGain">
+					<MarketChart></MarketChart>
+					</CascadingValue>
+				</CascadingValue>
+			</div>
+	
+</div>
+
+<!-- Chart Break-->			
+						
+</div>
+		<br>
+
+		
+<!--End of all things-->
+	</div>
+
+	@*<About></About>*@
+	<HowTo></HowTo>
+	
+	</CascadingValue>
+</body>
+</html>

@@ -1,0 +1,81 @@
+﻿@*@page "/Subs"*@
+
+@inject IJSRuntime jsRuntime;
+@inject Authentication Authentication;
+
+@code
+{
+    private async Task CheckoutHandler(string priceId)
+    {
+        if(ServerStatusManager.ServerOnline)
+        {            
+            await Authentication.UpdateDatabaseStatus();
+            if(Authentication.DatabaseOnline)
+            {            
+                if(Authentication.Auth0Client.EmailVerified == true)
+                {  
+                    string CustomerID = await Authentication.GetCustomerIDFromDB();
+                    string UserEmail = await Authentication.GetUserEmailFromDB();
+
+                    string sessionId = await Authentication.CreateCheckoutSessionAsync(priceId, CustomerID);
+                    await jsRuntime.InvokeVoidAsync("redirectToCheckout", sessionId);
+                }
+                if(Authentication.Auth0Client.EmailVerified == false || Authentication.Auth0Client.EmailVerified == null)
+                {
+
+                    //Tell User they need to verify e-mail
+                }
+            }
+        }
+    }
+}
+    
+<div class="SubHolder">
+
+	<div class="sub-headers2" style="width: 600px;">
+
+		<div style="display: flex; flex-direction:row; padding: 5px; justify-content:space-between;">
+
+			<img style="align-self: center;" src="img/cards/fa_access.png" width="48" height="48" />
+
+			<div style="font-family: EFT; letter-spacing:2px; font-size: 36px; align-self:center; justify-self: center;">
+				<a href="" @onclick="@(e => CheckoutHandler("price_1JaFtqA9Yey7WFTEgC7FHaek"))" style="color: #9a8866;">SUBSCRIBE</a>
+			</div>
+
+			<div style="align-self:center;">
+				FULL AUTO ACCESS <a class="demoButton" onclick="previewFullAutoSubsPage()">PREVIEW</a>
+			</div>			
+	
+		</div>
+	
+	</div>
+</div>
+
+	<!--Pop up Demos-->
+
+    @*  <div id="previewBox1" class="PreviewBox1">
+       
+	<div class="Preview-Content">
+	<span class="close">&times;</span>
+		<img src="/img/demo/BADemo.gif" width="808.8" height="280.8" />
+		
+		</div>
+		
+	</div>
+
+
+       <div id="previewBox2" class="PreviewBox2">
+	<div class="Preview-Content">
+	<span class="close">&times;</span>
+		<img src="/img/demo/SADemo.gif"  width="790.8" height="411"/>
+		
+		</div>
+		
+	</div>*@
+
+<div id="previewBox3" class="PreviewBox3">
+	<div class="Preview-Content">
+		<div class="close" id="closeButton">&times;</div>
+		<img src="/img/demo/FADemo.gif" width="790.8" height="962.4" />		
+	</div>
+</div>

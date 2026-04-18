@@ -1,0 +1,137 @@
+﻿@*@page "/Stripe-Payment-Cancel"
+@page "/Stripe-Payment-Cancel/{Param}"*@
+
+@using System;
+@using System.Timers;
+@using Microsoft.Extensions.Configuration
+
+@inject NavigationManager NavigationManager
+@inject TokenManager tokenManager
+
+
+@code
+
+{
+    
+    [Parameter]
+    public string Param { get; set; }
+
+    private int _time;
+    private int _timeRemaining = 5;
+    private int tickCount = 0;
+    private Timer refreshTimer;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {        
+        if(firstRender)
+        {
+            await Task.Delay(100);
+            _time = 1000;
+            _timeRemaining = _time / 200;
+            await RefreshTimer(_time);
+            firstRender = false;
+        }
+    }
+
+    public async Task RefreshTimer(int _time)
+    {        
+        refreshTimer = new Timer(_time);
+        refreshTimer.Elapsed += OnTimedEvent;
+        refreshTimer.Start();
+    }
+
+    private void OnTimedEvent(Object source, ElapsedEventArgs e)
+    {
+        if(refreshTimer != null)
+        {
+            tickCount++;
+            InvokeAsync(() => UpdateRemainingTime());
+            if(tickCount >= 5)
+            {            
+                NavigateToMainMenu();
+            }
+
+        }
+    }
+
+    private async Task UpdateRemainingTime()
+    {
+        _timeRemaining = _timeRemaining - 1;
+
+        if(_timeRemaining <= 0)
+        {
+            _timeRemaining = 0;
+
+            NavigateToMainMenu();
+        }
+
+        StateHasChanged();
+    }
+
+    private void NavigateToMainMenu()
+    {
+        if(refreshTimer != null)
+        {            
+            refreshTimer.Stop();
+            refreshTimer.Dispose();
+        }
+
+        refreshTimer = null;
+
+        NavigationManager.NavigateTo(NavigationManager.BaseUri, forceLoad: true);
+    }
+
+    private void AccessDenied()
+    {
+        if(refreshTimer != null)
+        {            
+            refreshTimer.Stop();
+            refreshTimer.Dispose();
+        }
+
+        refreshTimer = null;
+
+        NavigationManager.NavigateTo("/AccessDenied", forceLoad: true);
+    }
+
+
+    public async override Task SetParametersAsync(ParameterView parameters)
+    {
+        string hash = tokenManager._config.GetValue<string>("Stripe:GUID");
+        await base.SetParametersAsync(parameters);
+
+        if(Param != hash)
+        {
+            NavigateToMainMenu();
+        }
+    }
+
+
+
+
+}
+
+
+<html>
+  <head>
+    <title>Payment Canceled</title>
+  </head>
+  <body>
+      <AuthorizeView>
+          <Authorized>
+      <div class="blurthing2" style="padding: 12px; width:726px;">
+          Payment was canceled or did not succeed.
+          <br><br>
+          Returning to Taxov in @_timeRemaining seconds, or click <a href="#" @onclick=@NavigateToMainMenu>Here</a>
+      </div>
+      <br><br>
+      <Footer></Footer>
+        </Authorized>
+
+        <NotAuthorized>
+            @if (true) { AccessDenied(); }
+        </NotAuthorized>
+
+      </AuthorizeView>
+  </body>
+</html>

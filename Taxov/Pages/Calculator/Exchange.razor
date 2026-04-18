@@ -1,0 +1,45 @@
+﻿@*@page "/Currency"*@
+
+@inherits Taxov.Data.CurrencyExchange
+@using Taxov.Pages
+@using Taxov.Pages.Calculator
+@using Taxov.Pages.Charts
+
+
+    <div class="exchange" width="700">
+        <div class="blurthing2">
+        <table width="700" border="0" cellspacing="0" cellpadding="0" align="center">
+            
+            <tbody>
+                <tr>
+                    <td style="width: 30px; font-size: 18px; text-align: left">
+                        &nbsp; &nbsp;
+                    </td>
+                    <td style="width: 165px; font-size: 18px; text-align: left">
+                       CURRENCY EXCHANGE
+                    </td>
+                    <td style="width: 5px">
+                        &nbsp;
+                    </td>
+                    <td style="width: 135px">
+                        &#x20bd;
+                        <input class="rus" type="number" min="0" style="width: 165px" id="rus" @bind-value="Rus" @bind-value:event="oninput" @onkeyup="@(async () => await onClickCalcRUSAsync())">
+                    </td>
+
+                    <td style="width: 110px">
+                        &#36;
+                        <input class="usd" type="number" min="0" id="usd" @bind-value="Usd" @bind-value:event="oninput" @onkeyup="@(async () => await onClickCalcUSDAsync())">
+                    </td>
+
+                    <td style="width: 110px">
+                        &euro;
+                        <input class="eur" type="number" min="0" id="eur" @bind-value="Eur" @bind-value:event="oninput" @onkeyup="@(async () => await onClickCalcEURAsync())">
+                    </td>
+                    <td style="width: 30px">
+                        <button class="button" style="background-color:transparent; font-size:22px; vertical-align: middle" @onclick="@(async () => await ResetExchange())">&#x21ba;</button>
+                    </td>
+                </tr>
+            </tbody>            
+        </table>
+    </div>
+    </div>

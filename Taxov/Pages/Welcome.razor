@@ -1,0 +1,149 @@
+﻿@*@page "/Welcome"*@
+
+@using Taxov.Pages
+@using Taxov.Pages.Calculator
+@using Taxov.Pages.Charts
+
+@inherits Data.Navigation;
+@inject Authentication Authentication
+
+@code
+{
+	public string _AccessLevel;
+	private int retryCount = 3;
+    private readonly TimeSpan retryDelay = TimeSpan.FromSeconds(1);
+
+	public async Task<Boolean> GetAccessLevelRetryWhenFail()
+    {
+        int currentRetry = 0;
+
+        for (; ; )
+        {
+            try
+            {				
+                if(!ServerStatusManager.ServerOnline)
+                {
+                    currentRetry++;
+
+                    if (currentRetry > this.retryCount)
+                    {
+                        Console.WriteLine("GettingAccessLevelRetryWhenFail - WELCOME- Failed Consecutively...");                        
+						_AccessLevel = "Bolt Action";
+                        return false;
+                    }
+                    return false;
+                }   
+
+				if(ServerStatusManager.ServerOnline)
+				{
+					if(Authentication.Auth0Client != null && Authentication.Auth0Client.UserName != null)
+					{
+						_AccessLevel = await Authentication.GetAccessLevelFromDB();
+					}					
+				}
+				
+                if (_AccessLevel != null)
+                {
+                    return true;
+                }
+				else
+				{
+					Console.WriteLine("GetAccessLevelRetryWhenFail - WELCOME - Operation Failed");
+
+					currentRetry++;
+
+					if (currentRetry > retryCount)
+					{
+						Console.WriteLine("GetAccessLevelRetryWhenFail - WELCOME - Operation Failed Consecutively...");
+						_AccessLevel = "Bolt Action";
+						return false;
+					}
+				}
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("GetAccessLevelRetryWhenFail - WELCOME - Operation Failed");
+
+                currentRetry++;
+
+                if (currentRetry > retryCount)
+                {
+                    Console.WriteLine("GetAccessLevelRetryWhenFail - WELCOME - Operation Failed Consecutively...");
+                    return false;
+                }
+            }
+            await Task.Delay(retryDelay);
+        }
+        return false;
+    }
+
+	protected override async void OnAfterRender(bool firstRender)
+	{
+		// execute conditionally for loading data, otherwise this will load
+		// every time the page refreshes
+		if(firstRender)
+		{			
+			if(ServerStatusManager.ServerOnline)
+			{
+				if (Authentication.authState.User.Identity.IsAuthenticated)
+				{					
+					await GetAccessLevelRetryWhenFail();
+					StateHasChanged();
+				}
+			}			
+		}
+	}
+}
+
+
+<div class="pages">
+
+
+
+		<h1 class="pageh1">WELCOME</h1>
+     <img src="/img/welcome.jpg" alt=""/>
+
+	<div class="welcomeMessage">
+
+
+      <div class="textbox">
+		<p style="text-align: center; padding:4px">
+
+
+			<AuthorizeView>
+
+			<Authorized>
+			"Youngman, step in to my office and let's get your finances in order..."
+			</Authorized>
+			<NotAuthorized>Become a client today, LOGIN or REGISTER now to begin. Scroll to learn more.</NotAuthorized>
+
+
+			</AuthorizeView>
+
+
+
+			<div style="height: 18px; font-size: 14px; font-style: italic; padding-top: 0; text-align: center">
+			- THE ACCOUNTANT
+		</div>
+
+		</p>
+		</div>	
+		     
+  </div>
+</div>
+ <AuthorizeView>
+		  <NotAuthorized>
+			  <div style="position: relative; bottom:110px;">
+			  <About></About>
+				</div>
+		  </NotAuthorized>
+		<Authorized>
+			@if(_AccessLevel == null || _AccessLevel == "Bolt Action")
+			{
+				<div style="position: relative; bottom:110px;">
+			  <About></About>
+				</div>
+			}
+		</Authorized>
+</AuthorizeView>
+

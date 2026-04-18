@@ -1,0 +1,881 @@
+﻿@*@page "/Stripe-Payment-Success"
+@page "/Stripe-Payment-Success/{Param}"*@
+
+@using global::Stripe;
+@using System;
+@using System.Timers;
+@using Microsoft.Extensions.Configuration;
+
+@inject NavigationManager NavigationManager
+@inject Authentication Authentication
+@inject TokenManager tokenManager
+
+@code
+{
+    [Parameter]
+    public string Param { get; set; }
+
+
+    private bool SavedToDatabase = false;
+    private bool FailedRetries = false;
+    private bool AccessUpdated = false;
+    private bool OldSubCancelled = false;    
+    private bool transactionCancelled = false;
+    private bool transactionCancelSuccess = false;
+    private bool isUpgrade = false;
+    private bool upgradeSuccess = false;
+    private string DBSaveStatus = "";
+    private string HeaderString = "Processing";
+    private StripeList<Subscription> NewSubscription;
+    private Subscription OldSubscription;
+    private string OldSubscriptionID;
+    private UserModel CurrentUser;
+    private bool NewCustomer = false;
+    private string newSubTierName = null;
+    private string oldSubTierName = null;
+
+    private int retryCount = 5;
+    private int currentRetry = 0;
+    private readonly TimeSpan retryDelay = TimeSpan.FromSeconds(2);
+    private int _time;
+    private int _timeRemaining;
+    private int tickCount = 0;
+    private int failTimerCount = 20;
+    private int successTimerCount = 10;
+
+    Timer refreshTimer;
+
+
+
+
+    public async Task<Boolean> SaveSubscriptionRetryWhenFail()
+    {       
+        
+        for (; ; )
+        {
+            try
+            {
+                if(!ServerStatusManager.ServerOnline)
+                {
+                    Console.WriteLine("Database Access - STRIPE-PAYMENT - Failed");
+
+                    currentRetry++;                     
+                    StateHasChanged();
+
+                    if (currentRetry > this.retryCount)
+                    {   
+                        currentRetry = retryCount;
+                        Console.WriteLine("Database Access - STRIPE-PAYMENT - Failed Consecutively...");
+                        FailedRetries = true;
+                        upgradeSuccess = false;
+
+                        if(await GetCurrentSubscription())
+                        {
+                            if(await CancelTransaction(NewSubscription.FirstOrDefault()))
+                            {
+                                transactionCancelSuccess = true;
+                            }
+                        }
+                        else
+                        {
+                            transactionCancelSuccess = false;
+                        }
+                        
+                        _time = 1000;
+                        _timeRemaining = _time / 50;
+                        await FailedRefreshTimer(_time);
+                        StateHasChanged();
+                        return false;
+                    }
+                }
+                else
+                {                    
+                    await GetUserData();
+                    if(CurrentUser == null)
+                    {
+                        return false;
+                    }
+
+                    if(CurrentUser.CustomerID == null)
+                    {
+                        return false;
+                    }
+
+                    if (await SaveSubscriptionData())
+                    {
+                        _time = 1000;
+                        _timeRemaining = _time / 100;
+                        await SuccessRefreshTimer(_time);
+                        return true;
+                    }
+                    else
+                    {
+                        Console.WriteLine("SaveSubscriptionRetryWhenFail - STRIPE-PAYMENT - Failed");
+
+                        currentRetry++;                     
+                        StateHasChanged();
+
+                        if (currentRetry > this.retryCount)
+                        {   
+                            currentRetry = retryCount;
+                            Console.WriteLine("SaveSubscriptionRetryWhenFail - STRIPE-PAYMENT - Failed Consecutively...");
+                            FailedRetries = true;
+                            upgradeSuccess = false;
+
+                            if(await GetCurrentSubscription())
+                            {
+                                if(await CancelTransaction(NewSubscription.FirstOrDefault()))
+                                {
+                                    transactionCancelSuccess = true;
+                                }
+                            }
+                            else
+                            {
+                                transactionCancelSuccess = false;
+                            }
+
+                            _time = 1000;
+                            _timeRemaining = _time / 50;
+                            await FailedRefreshTimer(_time);
+                            StateHasChanged();
+                            return false;
+                        }
+                    }
+                }                
+                await Task.Delay(retryDelay);
+            }                
+            catch (Exception e)
+            {
+                Console.WriteLine("SaveSubscriptionRetryWhenFail - STRIPE-PAYMENT - Failed");
+
+                currentRetry++;
+                StateHasChanged();
+
+                if (currentRetry > retryCount || !IsTransient(e))
+                {
+                    currentRetry = retryCount;
+                    Console.WriteLine("SaveSubscriptionRetryWhenFail - STRIPE-PAYMENT - Failed Consecutively...");
+                    FailedRetries = true;
+                    upgradeSuccess = false;
+
+                    if(await GetCurrentSubscription())
+                    {
+                        if(await CancelTransaction(NewSubscription.FirstOrDefault()))
+                        {
+                            transactionCancelSuccess = true;
+                        }
+                    }
+                    else
+                    {
+                        transactionCancelSuccess = false;
+                    }
+
+                    _time = 1000;
+                    _timeRemaining = _time / 50;
+                    await FailedRefreshTimer(_time);
+                    StateHasChanged();
+                    return false;
+                }
+            }
+            await Task.Delay(retryDelay);
+        }
+        return false;
+    }
+
+    private bool IsTransient(Exception e)
+    {
+        Console.WriteLine("Transient Error.");
+        return true;
+        //throw new NotImplementedException();
+    }
+
+    
+    //Save Subscription Functions
+
+    protected async Task<Boolean> SaveSubscriptionData()
+    {
+        //Get UserProfile
+        try
+        {
+            await GetCurrentUser();    
+        }
+        catch
+        {
+            Console.WriteLine("No current user..");
+            return false;
+        }        
+
+        //Check for Old Saved Subscription to Determine New Sub or Upgrade Sub
+        if(await CheckSubscriptionInDB())
+        {
+            //Old Sub - New Sub is Upgrade
+            isUpgrade = true;
+            await GetOldSubscription();
+            oldSubTierName = await Authentication.GetSubscriptionPlan(OldSubscription);
+            
+
+            if(await SaveUpgradeSubscriptionToTemp())
+            {
+                if (OldSubCancelled == false)
+                {                    
+                    if(await CancelOldSubcription(OldSubscription))
+                    {
+                        OldSubCancelled = true;
+                    }
+                    else
+                    {
+                        OldSubCancelled = false;
+                    }
+                }                
+                //Save New Subscription
+                    if(await SaveNewSubscription())
+                    {
+                        Console.WriteLine("Upgrade Subscription Data Saved");
+                        if(await Authentication.InsertNewUpgradeIDInDB(null))
+                        {
+                            Console.WriteLine("Upgrade ID cleared from DB");
+                        }
+                        Console.WriteLine("Upgrade succeeded");
+                        upgradeSuccess = true;
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }               
+            }
+            else
+            {
+                Console.WriteLine("Could not save Upgrade data to Temp");
+
+                //Cancel Upgrade
+                return false;
+            }
+            return true;
+        }
+        else
+        {
+            //New Sub - Save as Normal
+
+            if(await SaveNewSubscription())
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    protected async Task<Boolean> SaveUpgradeSubscriptionToTemp()
+    {
+        
+        try
+        {
+            await GetCurrentSubscription();
+            if(NewSubscription == null)
+            {
+                return false;
+            }
+            if(NewSubscription.Data.Count == 0)
+            {
+                return false;
+            }
+            if(await Authentication.InsertNewUpgradeIDInDB(NewSubscription.FirstOrDefault().Id))
+            {
+                Console.WriteLine("Saved Upgrade ID to DB");
+                return true;
+            }
+        }
+        catch
+        {
+            Console.WriteLine("Could not save Upgrade ID to DB");
+            return false;
+        }
+        return false;
+    }
+
+    protected async Task<Boolean> CancelOldSubcription(Subscription _subscription)
+    {
+        try
+        {
+            await Authentication.CancelSubscriptionImmediate(_subscription.Id);            
+            Console.WriteLine("Canceled Old Subscription");
+            return true;
+        }
+        catch
+        {
+            Console.WriteLine("Could not cancel subscription.");
+            return false;
+        }
+    }
+
+    protected async Task<Boolean> CancelTransaction(Subscription _subscription)
+    {
+        try
+        {
+            await Authentication.CancelSubscriptionImmediate(_subscription.Id);            
+            Console.WriteLine("Canceled Transaction");
+            transactionCancelled = true;
+            return true;
+        }
+        catch
+        {
+            Console.WriteLine("Could not cancel transaction.");
+            transactionCancelled = false;
+            return false;
+        }
+    }
+
+    protected async Task<Boolean> SaveNewSubscription()
+    {      
+        await GetCurrentSubscription();
+
+        if(NewSubscription == null)
+        {
+            return false;
+        }
+        if(NewSubscription.Data.Count == 0)
+        {
+            return false;
+        }
+
+                var _newCustomerDate = await Authentication.GetNewCustomerDateFromDB();
+                    if(_newCustomerDate == DateTime.MinValue)
+                    {
+                        NewCustomer = true;
+                    }
+                    else
+                    {
+                        NewCustomer = false;
+                    }
+
+                if(await Authentication.UpdateSubscriptionIDInDB(NewSubscription.FirstOrDefault().Id))
+                {
+                    Console.WriteLine("Subscription Data Saved to Database!");
+                    SavedToDatabase = true;
+
+                    if(NewCustomer)
+                        {
+                            await Authentication.SetNewCustomerDateInDB(NewSubscription.FirstOrDefault().Created);
+                        }
+
+                    newSubTierName = await Authentication.GetSubscriptionPlan(NewSubscription.FirstOrDefault());
+
+                    if(newSubTierName == "Semi-Auto")
+                    {
+                        await Authentication.UpdateSubTierInDB(18);
+                        await Authentication.UpdateSubTierNameInDB(newSubTierName);
+                        await Authentication.UpdateAccessLevelInDB(newSubTierName);
+                        await Authentication.UpdatePaidStatusInDB(1);
+                        AccessUpdated = true;
+                    }
+                    if(newSubTierName == "Full Auto")
+                    {                    
+                        await Authentication.UpdateSubTierInDB(88);
+                        await Authentication.UpdateSubTierNameInDB(newSubTierName);
+                        await Authentication.UpdateAccessLevelInDB(newSubTierName);
+                        await Authentication.UpdatePaidStatusInDB(1);
+                        AccessUpdated = true;
+                    }
+                    if(newSubTierName == "Belt Fed")
+                    {
+                        //HACKER trying to steal our SHIT!!
+                    
+                        //await Authentication.UpdateSubTierInDB(150);
+                        //await Authentication.UpdateSubTierNameInDB(subTierName);
+                        //await Authentication.UpdateAccessLevelInDB(subTierName);
+                        //await Authentication.UpdatePaidStatusInDB(1);
+                        //AccessUpdated = true;
+
+                    }
+                    return true;
+                }
+                else
+                {
+                    Console.WriteLine("Database save failed");
+                    return false;
+                }
+        return false;
+    }        
+    
+            
+    
+
+
+    protected async Task<Boolean> GetCurrentUser()
+    {
+        try
+        {            
+            CurrentUser = await Authentication.GetUserProfileDataFromDB();
+                if(CurrentUser == null)
+                {
+                    return false;
+                }
+            return true;
+        }
+        catch
+        {
+            Console.WriteLine("Could not retrieve CurrentUser...");
+            return false;
+        }
+    }
+
+    protected async Task<Boolean> CheckSubscriptionInDB()
+    {
+        try
+        {            
+            OldSubscriptionID = await Authentication.GetSubscriptionIDFromDB();
+
+                if(OldSubscriptionID == null)
+                {
+                    return false;
+                }
+                
+                if(OldSubscriptionID == "")
+                {
+                    return false;
+                }
+                
+                return true;
+                
+        }
+        catch
+        {
+            Console.WriteLine("Could not retrieve subscription in DB");
+            return false;
+        }
+        return false;
+    }
+
+    protected async Task<Boolean> GetOldSubscription()
+    {
+        if(OldSubscriptionID == null)
+        {
+            return false;
+        }
+        if(OldSubscriptionID == "")
+        {
+            return false;
+
+        }
+
+        try
+        {
+            OldSubscription = await Authentication.GetSubscriptionByID(OldSubscriptionID);
+            if(OldSubscription != null)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        catch
+        {
+            Console.WriteLine("Could not retrieve Old Subscription Object");
+            return false;
+        }
+        return false;
+    }
+
+    protected async Task<Boolean> GetCurrentSubscription()
+    {
+        await GetAuth0Client();
+
+        if(ServerStatusManager.ServerOnline)
+        {
+            try
+            {
+                NewSubscription = await Authentication.GetStripeSubscription(CurrentUser.CustomerID); 
+                    if(NewSubscription == null)
+                    {
+                        return false;
+                    }
+
+                    if(NewSubscription.Data.Count == 0)
+                    {
+                        return false;
+                    }
+
+                    if(NewSubscription.Data.Count == 1)
+                    {                        
+                            var subInDB = await Authentication.GetSubscriptionIDFromDB();
+
+                            if(NewSubscription.FirstOrDefault().Id == subInDB)
+                            {
+                                return false;
+                            }     
+                    }
+                return true;
+
+            }
+            catch
+            {
+                Console.WriteLine("Could not retrieve Subscription");
+                return false;
+            }
+        }
+
+        if(!ServerStatusManager.ServerOnline)
+        {
+            try
+            {
+                NewSubscription = await Authentication.GetStripeSubscription(await Authentication.GetStripeCustomerFromEmail(Authentication.Auth0Client.Email)); 
+                    if(NewSubscription == null)
+                    {
+                        return false;
+                    }
+
+                    if(NewSubscription.Data.Count == 0)
+                    {
+                        return false;
+                    }
+
+                    if(NewSubscription.Data.Count == 1)
+                    {
+                        return true;
+                    }
+                    if(NewSubscription.Data.Count == 2)
+                    {
+                        return true;
+                    }
+                return true;
+            }
+            catch
+            {
+                Console.WriteLine("Could not retrieve Subscription");
+                return false;
+            }
+        }
+        else
+        {
+            return false;
+        }
+
+    }
+
+    //TIMERS
+
+    public async Task SuccessRefreshTimer(int _time)
+    {        
+        refreshTimer = new Timer(_time);
+        refreshTimer.Elapsed += OnSuccessTimedEvent;
+        refreshTimer.Start();
+    }
+
+    private void OnSuccessTimedEvent(Object source, ElapsedEventArgs e)
+    {
+        if(refreshTimer != null)
+        {           
+            tickCount++;
+            InvokeAsync(() => UpdateRemainingTime());
+            if(tickCount >= successTimerCount)
+            {
+                NavigateToMainMenu();
+            } 
+        }
+    }
+
+    public async Task FailedRefreshTimer(int _time)
+    {        
+        refreshTimer = new Timer(_time);
+        refreshTimer.Elapsed += OnFailedTimedEvent;
+        refreshTimer.Start();
+    }
+
+    private void OnFailedTimedEvent(Object source, ElapsedEventArgs e)
+    {
+        if(refreshTimer != null)
+        {
+            tickCount++;
+            InvokeAsync(() => UpdateRemainingTime());
+            if(tickCount >= failTimerCount)
+            {   
+                NavigateToMainMenu();
+            }     
+        }
+        
+    }
+
+    private async Task UpdateRemainingTime()
+    {        
+        _timeRemaining = _timeRemaining - 1;
+        if(_timeRemaining <= 0)
+        {
+            _timeRemaining = 0;
+            NavigateToMainMenu();
+        }
+        StateHasChanged();
+    }
+
+    private void NavigateToMainMenu()
+    {
+        if(refreshTimer != null)
+        {            
+            refreshTimer.Stop();
+            refreshTimer.Dispose();
+        }
+
+        refreshTimer = null;
+
+        NavigationManager.NavigateTo(NavigationManager.BaseUri, forceLoad: true);
+    }
+
+    private void AccessDenied()
+    {
+        if(refreshTimer != null)
+        {            
+            refreshTimer.Stop();
+            refreshTimer.Dispose();
+        }
+
+        refreshTimer = null;
+
+        NavigationManager.NavigateTo("/AccessDenied", forceLoad: true);
+    }
+
+    private async Task GetAuth0Client()
+    {   
+		if(await Authentication.GetLoggedInUser())
+		{
+			if(await Authentication.GetAuth0UserID())
+			{	
+                if(tokenManager.MgmtToken != null)
+                {
+                    await Authentication.GetAuth0DataRetryWhenFail();
+                }
+			}     
+		}
+    }
+
+    private async Task GetUserData()
+    {   
+        if(!ServerStatusManager.ServerOnline)
+        {
+            return;
+        }
+
+        //await ClearProfileView();
+        if(Authentication.Auth0Client == null)
+        {
+            return;
+        }
+
+        if(Authentication.Auth0Client.UserName == null)
+        {            
+            return;
+        }
+
+		if(await Authentication.GetLoggedInUser())
+		{
+			if(await Authentication.GetAuth0UserID())
+			{	
+                if(tokenManager.MgmtToken != null)
+                {                    
+                    if(await Authentication.GetAuth0DataRetryWhenFail())
+				    {					
+					    if(await Authentication.CheckUserInDatabase())
+                        {   
+                            CurrentUser = await Authentication.GetUserProfileDataFromDB();
+					    }
+					    if(!await Authentication.CheckUserInDatabase())
+					    {
+						    if(await Authentication.UserSetup())
+						    {
+                                CurrentUser = await Authentication.GetUserProfileDataFromDB();
+						    }
+					    }					
+				    }
+                }
+			}     
+		}
+    }
+
+
+    //LOAD PAGE
+    
+    public async override Task SetParametersAsync(ParameterView parameters)
+    {
+        string hash = tokenManager._config.GetValue<string>("Stripe:GUID");
+        await base.SetParametersAsync(parameters);
+
+        if(Param != hash)
+        {
+            NavigateToMainMenu();
+        }
+    }
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {        
+        if(firstRender)
+        {
+            await Task.Delay(1000);            
+            await SaveSubscriptionRetryWhenFail();
+        }
+    }
+
+
+}
+
+<html>
+  <head>
+    <title>Payment Processing!</title>
+  </head>
+  <body> 
+<AuthorizeView>
+    <Authorized>
+      @if(SavedToDatabase)
+        {
+            <h1 class="pageh1">SUCCESS</h1>
+        }
+        @if(!SavedToDatabase && !FailedRetries)
+        {
+            <h1 class="navbar">PROCESSING</h1>
+        }
+        @if(!SavedToDatabase && FailedRetries)
+        {
+            <h1 class="deniedh1">ERROR</h1>
+        }
+    <div class="blurthing" style="padding: 12px; width:726px;">
+
+    <!--Begin page-->
+
+          Payment: Success!
+          <br><br>
+          Saving to Taxov Database: @DBSaveStatus
+          
+          @if(SavedToDatabase)
+            {
+                DBSaveStatus = "Success!";
+            }
+            @if(!SavedToDatabase && !FailedRetries)
+            {
+                DBSaveStatus = "...";
+                <div class="spinnerPayment"></div>                
+            }
+            @if(!SavedToDatabase && FailedRetries)
+            {
+                DBSaveStatus = "Failed.";
+            }
+            
+        <br><br>
+          @if(currentRetry != 0)
+          {
+              <div>
+              Retry Count: @currentRetry / @retryCount
+              <br>
+              </div>
+          }
+          
+          @if(!SavedToDatabase && !FailedRetries)
+            {                
+                <div style="font-style: italic; font-size:14px">
+                    <br><br>
+                    <p>
+                        Do not close this window, refresh this page, or hit the back button while Taxov Transaction is in progress.</p>
+                    <p> You may incur duplicate charges or your subscription may automatically cancel with errors.
+                    </p>
+                </div>
+            }        
+
+          @if(SavedToDatabase)
+            {
+                <div>
+                   
+                    Subscription Information Saved to Database Successfully!<br><br>
+                    @if(AccessUpdated)
+                    {
+                       
+                        if(isUpgrade && upgradeSuccess)
+                        {
+                            
+                                <div>
+                                Upgrading from @oldSubTierName to @newSubTierName
+                                <br><br><br><br>
+                                </div>
+                               <div class="pageh3" style="width: 320px; justify-self: center; margin: auto; text-align:center;">
+                                   @newSubTierName Access Granted!
+                                                              
+                            </div>
+                        }
+                        if(!isUpgrade)
+                        {
+                            <br><br><br>
+                            <div class="pageh3" style="width: 320px; justify-self: center; margin: auto; text-align:center;">
+                                @newSubTierName Access Granted
+                              
+                            </div>
+                        }
+                       
+                        
+
+                        <div class="accessCard" style="width:300px; justify-items:center; padding: 10px;">
+
+                        @if(newSubTierName == "Semi-Auto")
+                        {                                    
+                                <img src="/img/cards/sa_access.png" width="256" height="256" title="Semi-Auto Access Card"/>                                         
+                        }
+                        @if(newSubTierName == "Full Auto")
+                        {                                    
+                                    <img src="/img/cards/fa_access.png" width="256" height="256" title="Full Auto Access Card"/>  
+                        }
+                        @if(newSubTierName == "Belt Fed")
+                        {                                    
+                                    <img src="/img/cards/bf_access.png" width="256" height="256" title="Belt Fed Access Card"/>    
+                        } 
+                        </div>
+                    }
+                    <br><br><br><br>
+                    Thank you for supporting Taxov!                      
+                    <p>Returning to Taxov in @_timeRemaining seconds, or click <a href="#" @onclick=@NavigateToMainMenu>Here</a></p>
+                </div>
+            }
+            @if(!SavedToDatabase && FailedRetries)
+            {
+            <div>
+                <br>
+                Error: Subscription Information Did NOT Save to Database!
+                <br>
+                Canceling transaction..
+                <br>
+                @if(transactionCancelled)
+                {
+                    Task.Delay(1000);
+                    <div>Transaction successfully canceled!  No charges incurred.</div>
+                }
+                @if(!transactionCancelSuccess)
+                {
+                    Task.Delay(1000);                    
+                    <div>
+                        <br>
+                        <p style="color:red; font-size:18px; font-weight:bolder">Transaction was -NOT- canceled successfully!</p>
+                        <br>
+                        <p>Our server may have had a hiccup or temporarily went offline during the transaction.</p>
+                        <p>Contact us <a href="mailto:billing@taxov.tax" style="color: #9a8866">-Immediately-</a> so we can resolve this issue.</p>
+                        <p>We sincerely apologize for the inconvenience.</p>
+                        <br>
+                        <br>
+                    </div>        
+                }
+
+                <br>
+                Please contact us at <a href="mailto:billing@taxov.tax" style="color: #9a8866">Billing@Taxov.Tax</a> or reach out to us on our Discord for support.
+                <p>Returning to Taxov in @_timeRemaining seconds, or click <a href="#" @onclick=@NavigateToMainMenu>Here</a></p>
+            </div>
+            }
+
+    </div>
+    <br><br>
+    <Footer></Footer>
+    </Authorized>
+    <NotAuthorized>
+        @if (true) { AccessDenied(); }
+    </NotAuthorized>
+</AuthorizeView>
+  </body>
+</html>
