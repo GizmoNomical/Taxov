@@ -52,4 +52,5 @@ The application transforms complex game mechanics into reusable business logic, 
 GizmoNomical (Bret Elliott)
 
 ## Taxov - The Tarkov Tax Tool (99.9% Accurate Calculations, Graphs and Data Readouts)
-<img width="2560" height="1440" alt="Taxov2" src="https://github.com/user-attachments/assets/f43633f6-a3fb-48d3-b51b-488f60de4e61" />
+<img width="2560" height="1440" alt="Taxov2" src="https://github.com/user-attachments/assets/ad1be921-0336-4804-adf9-a121d0ff521f" />
+
