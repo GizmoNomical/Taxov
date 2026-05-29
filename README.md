@@ -10,7 +10,15 @@ Created originally as a simple calculator by reverse engineering the in-game Tax
 
 - Calculate Flea Market taxes accurately  
 - Help players avoid unprofitable listings  
-- Improve efficiency and decision-making  
+- Improve efficiency and decision-making
+
+## Technical Overview
+
+- Built with C#, ASP.NET Core MVC, Razor/Blazor, HTML, CSS, and JavaScript
+- Hosted on IIS with a MySQL backend
+- Implemented authentication, subscription management, and recurring payment workflows
+- Integrated Stripe for payment processing
+- Reverse engineered in-game market tax formulas into reusable calculation logic
 
 ## Author
 
