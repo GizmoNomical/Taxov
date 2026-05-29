@@ -15,3 +15,9 @@ Created originally as a simple calculator by reverse engineering the in-game Tax
 ## Author
 
 GizmoNomical (Bret Elliott)
+
+## Taxov - Fresh Start
+<img width="2560" height="1440" alt="Taxov" src="https://github.com/user-attachments/assets/4f8290ba-fe20-44ca-9bee-6082deabf55c" />
+
+## Taxov - In Use (Accurate Calculations, Graphs and Data Readouts)
+<img width="2560" height="1440" alt="Taxov2" src="https://github.com/user-attachments/assets/f43633f6-a3fb-48d3-b51b-488f60de4e61" />
