@@ -1,24 +1,51 @@
-# 📝 Taxov
+# Taxov
 
-**Taxov** (Escape from Taxov) is a Web-Based Multifunction Calculator for the Escape from Tarkov PC Game, designed to simplify Flea Market tax calculations and help players make better listing decisions.
+**Taxov** is a SaaS web application built with C#, ASP.NET, MySQL, OAuth authentication, and Stripe subscription management.
 
-It provides quick metrics, graphs, and insights to avoid overpaying taxes, maximize profit, and remove the guesswork from pricing items.
+Originally created to solve a complex pricing and tax-calculation problem for Escape from Tarkov players, the project evolved into a fully hosted web platform featuring user accounts, recurring subscriptions, payment processing, premium feature access, and real-time calculation services.
 
-Created originally as a simple calculator by reverse engineering the in-game Tax Values, it was then converted into a SaaS with Stripe/SQL Payment Authentication and Recurring Payment System.
+The application reverse engineers and models the game's Flea Market tax system, allowing users to evaluate listing strategies, maximize profit, and make informed pricing decisions through interactive calculations, graphs, and data visualizations.
 
 ## Purpose
 
-- Calculate Flea Market taxes accurately  
-- Help players avoid unprofitable listings  
-- Improve efficiency and decision-making
+* Provide accurate real-time market tax calculations
+* Help users identify profitable listing strategies
+* Present complex calculation results through intuitive visualizations
+* Deliver premium tools through a subscription-based SaaS platform
 
 ## Technical Overview
 
-- Built with C#, ASP.NET Core MVC, Razor/Blazor, HTML, CSS, and JavaScript
-- Hosted on IIS with a MySQL backend
-- Implemented authentication, subscription management, and recurring payment workflows
-- Integrated Stripe for payment processing
-- Reverse engineered in-game market tax formulas into reusable calculation logic
+### Backend & Infrastructure
+
+* C#
+* ASP.NET Core MVC
+* Razor / Blazor
+* MySQL
+* IIS Hosting
+
+### Authentication & Payments
+
+* OAuth Authentication and Account Management
+* Stripe Subscription & Payment Processing
+* Premium Feature Access Management
+* Recurring Billing Workflows
+
+### Application Features
+
+* Real-time calculation services
+* Dynamic data processing pipelines
+* Interactive graphs and visualizations
+* User account and subscription management
+* Complex business logic and pricing analysis
+
+## Technical Highlights
+
+* Designed and developed a 5,000+ line C# web application
+* Implemented OAuth authentication and account management workflows
+* Integrated Stripe subscription billing and recurring payment processing
+* Built backend services supporting premium feature access and subscription validation
+* Reverse engineered complex in-game tax calculations into reusable business logic
+* Developed dynamic calculation pipelines for real-time user input and result generation
 
 ## Author
 
