@@ -1,17 +1,17 @@
 # Taxov
 
-**Taxov** is a SaaS web application built with C#, ASP.NET, MySQL, OAuth authentication, and Stripe subscription management.
+**Taxov** is a C# web application and SaaS platform built to help Escape from Tarkov players make better marketplace pricing decisions through accurate tax calculations, data visualization, and profit analysis tools.
 
-Originally created to solve a complex pricing and tax-calculation problem for Escape from Tarkov players, the project evolved into a fully hosted web platform featuring user accounts, recurring subscriptions, payment processing, premium feature access, and real-time calculation services.
+Originally created by reverse engineering the game's Flea Market tax system, the project evolved into a fully hosted platform featuring user accounts, OAuth authentication, Stripe subscription management, recurring billing, premium feature access, and real-time calculation services.
 
-The application reverse engineers and models the game's Flea Market tax system, allowing users to evaluate listing strategies, maximize profit, and make informed pricing decisions through interactive calculations, graphs, and data visualizations.
+The application transforms complex game mechanics into reusable business logic, allowing users to quickly evaluate listing strategies, maximize profit, and make informed decisions through interactive calculations, graphs, and data-driven insights.
 
 ## Purpose
 
-* Provide accurate real-time market tax calculations
+* Calculate Flea Market taxes with high accuracy
 * Help users identify profitable listing strategies
 * Present complex calculation results through intuitive visualizations
-* Deliver premium tools through a subscription-based SaaS platform
+* Deliver advanced tools through a subscription-based SaaS platform
 
 ## Technical Overview
 
@@ -36,15 +36,15 @@ The application reverse engineers and models the game's Flea Market tax system, 
 * Dynamic data processing pipelines
 * Interactive graphs and visualizations
 * User account and subscription management
-* Complex business logic and pricing analysis
+* Complex pricing and business logic analysis
 
 ## Technical Highlights
 
 * Designed and developed a 5,000+ line C# web application
+* Reverse engineered complex in-game tax formulas into reusable business logic
 * Implemented OAuth authentication and account management workflows
 * Integrated Stripe subscription billing and recurring payment processing
 * Built backend services supporting premium feature access and subscription validation
-* Reverse engineered complex in-game tax calculations into reusable business logic
 * Developed dynamic calculation pipelines for real-time user input and result generation
 
 ## Author
